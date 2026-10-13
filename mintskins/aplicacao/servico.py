@@ -73,6 +73,17 @@ class ServicoSkins:
     def pode_desfazer(self) -> bool:
         return self.repo.desfazer_disponivel() is not None
 
+    def nome_antes_da_troca(self) -> Optional[str]:
+        """Nome da skin que volta ao desfazer (None se o visual anterior nao era uma skin)."""
+        anterior = self.repo.desfazer_disponivel()
+        skin_id = anterior.extras.get("estava_ativa") if anterior else None
+        if not skin_id:
+            return None
+        try:
+            return self.obter(skin_id).nome
+        except SkinNaoEncontrada:
+            return None
+
     def pasta_minhas_skins(self) -> Path:
         return self.repo.usuario
 

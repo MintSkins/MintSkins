@@ -240,6 +240,18 @@ class Avatar(Gtk.Label):
         self.set_valign(Gtk.Align.CENTER)
 
 
+def avatar(quem, grande=False):
+    """Foto redonda da conta/perfil; sem foto, as iniciais."""
+    if getattr(quem, "foto", None):
+        lado = 72 if grande else 36
+        c = Capa(lado, lado, raio=lado / 2)
+        c.definir(quem.foto)
+        c.set_halign(Gtk.Align.START)
+        c.set_valign(Gtk.Align.CENTER)
+        return c
+    return Avatar(quem.iniciais, grande)
+
+
 def vazio(titulo, texto, acao=None):
     caixa = css(Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=8), "ms-vazio-card")
     caixa.pack_start(rotulo(titulo, ["ms-card-nome"], xalign=0.5), False, False, 0)

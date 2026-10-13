@@ -18,9 +18,11 @@ from ..dominio.notificacao import ACAO_ATUALIZACAO  # noqa: E402
 from ..dominio.skin import EXTENSAO, EXTENSOES_ACEITAS  # noqa: E402
 from . import dialogos, paginas, tema  # noqa: E402
 from .atualizacao import PopupAtualizacao  # noqa: E402
+from .editar_perfil import ModalPerfil  # noqa: E402
+from .modal import ModalConfirmacao  # noqa: E402
 from .notificacoes import Sino  # noqa: E402
 from . import textos as T  # noqa: E402
-from .widgets import Avatar, Card, Marca, botao, css, data_br, icone, rotulo  # noqa: E402
+from .widgets import Card, Marca, avatar, botao, css, data_br, icone, rotulo  # noqa: E402
 
 LATERAL = [("inicio", "SKINS"), ("galeria", "SKINS"), ("minhas", "SKINS"),
            ("conta", "MINTSKINS"), ("preferencias", "MINTSKINS"), ("sobre", "MINTSKINS")]
@@ -46,8 +48,9 @@ class Janela(Gtk.ApplicationWindow):
         self._estilo = Gtk.CssProvider()
         Gtk.StyleContext.add_provider_for_screen(Gdk.Screen.get_default(), self._estilo,
                                                  Gtk.STYLE_PROVIDER_PRIORITY_APPLICATION)
-        tema.fixar_visual(ao_mudar_tema=self.aplicar_tema)
         self.aplicar_tema()
+        # janela e icones seguem o tema do sistema; ao trocar o tema, a paleta clara/escura acompanha
+        Gtk.Settings.get_default().connect("notify::gtk-theme-name", lambda *_: self.aplicar_tema())
         self.app.notificacoes.ao_abrir(__version__)
 
         self._barra()
@@ -73,6 +76,10 @@ class Janela(Gtk.ApplicationWindow):
                                       ao_reiniciar=self.reiniciar, ao_tentar_de_novo=self.atualizar_app,
                                       ao_fechar=lambda: self._barra_ativa(True))
         raiz.add_overlay(self.popup)
+        self.confirmacao = ModalConfirmacao(corpo, ao_fechar=lambda: self._barra_ativa(True))
+        raiz.add_overlay(self.confirmacao)
+        self.modal_perfil = ModalPerfil(corpo, self._salvar_perfil, ao_fechar=lambda: self._barra_ativa(True))
+        raiz.add_overlay(self.modal_perfil)
         self.connect("key-press-event", self._tecla)
         self.connect("delete-event", self._fechando)
 
@@ -117,9 +124,12 @@ class Janela(Gtk.ApplicationWindow):
             pass
 
     def _variante_auto(self):
-        """Segue o tema do sistema (o app usa o Adwaita, entao vale o nome guardado)."""
-        nome = (tema.SISTEMA.get("gtk-theme-name") or "").lower()
-        return "escura" if tema.SISTEMA.get("escuro") or "dark" in nome or "escuro" in nome else "clara"
+        cfg = Gtk.Settings.get_default()
+        if cfg.props.gtk_application_prefer_dark_theme or "dark" in (cfg.props.gtk_theme_name or "").lower():
+            return "escura"
+        ok, cor = Gtk.StyleContext().lookup_color("theme_bg_color")
+        claridade = 0.299 * cor.red + 0.587 * cor.green + 0.114 * cor.blue if ok else 1
+        return "escura" if claridade < 0.5 else "clara"
 
     def aplicar_tema(self):
         escolha = self.app.skins.preferencias().aparencia
@@ -127,7 +137,6 @@ class Janela(Gtk.ApplicationWindow):
         if variante != self._variante:
             self._variante = variante
             self._estilo.load_from_data(tema.css(variante).encode())
-            Gtk.Settings.get_default().props.gtk_application_prefer_dark_theme = variante == "escura"
             for logo in self._logos:
                 logo.definir(tema.logo(variante))
 
@@ -152,8 +161,10 @@ class Janela(Gtk.ApplicationWindow):
                           dica="Guarda o visual da tela como uma skin sua", ao_clicar=self.salvar_atual))
         hb.pack_end(botao("Importar", "ms-fantasma", icone_nome="document-open-symbolic",
                           dica="Importar um arquivo .mintskins", ao_clicar=self.importar))
-        self.btn_desfazer = botao("", "ms-fantasma", icone_nome="edit-undo-symbolic", dica=T.DESFAZER,
+        self.btn_desfazer = botao("Desfazer", "ms-fantasma", icone_nome="edit-undo-symbolic", dica=T.DESFAZER,
                                   ao_clicar=self.desfazer)
+        self.btn_desfazer.set_no_show_all(True)       # so aparece quando ha uma troca para desfazer
+        self.btn_desfazer.get_child().show_all()
         hb.pack_end(self.btn_desfazer)
         self._hb = hb
 
@@ -163,13 +174,20 @@ class Janela(Gtk.ApplicationWindow):
             w.set_sensitive(ativa)
         if ativa:
             self.btn_voltar.set_sensitive(len(self._trilha) > 1)
-            self.btn_desfazer.set_sensitive(self.app.skins.pode_desfazer())
+            self.btn_desfazer.set_visible(self.app.skins.pode_desfazer())
 
     def _tecla(self, _w, ev):
-        if ev.keyval == Gdk.KEY_Escape and self.popup.aberto:
-            self.popup.fechar()
-            return True
+        if ev.keyval == Gdk.KEY_Escape:
+            for modal in (self.confirmacao, self.modal_perfil, self.popup):
+                if modal.aberto:
+                    modal.fechar()
+                    return True
         return False
+
+    def perguntar(self, titulo, texto, botao_txt, acao, icone_nome="dialog-question-symbolic", destrutivo=False):
+        """Confirmacao no meio da janela, com o resto borrado."""
+        self._barra_ativa(False)
+        self.confirmacao.confirmar(self._variante, titulo, texto, botao_txt, acao, icone_nome, destrutivo)
 
     def _abrir_popup(self):
         self._barra_ativa(False)
@@ -227,7 +245,7 @@ class Janela(Gtk.ApplicationWindow):
         b = css(Gtk.Button(relief=Gtk.ReliefStyle.NONE), "ms-fantasma")
         caixa = Gtk.Box(spacing=10)
         if self.conta:
-            caixa.pack_start(Avatar(self.conta.iniciais), False, False, 0)
+            caixa.pack_start(avatar(self.conta), False, False, 0)
             caixa.pack_start(rotulo(self.conta.nome, ["ms-card-nome"]), True, True, 0)
         else:
             caixa.pack_start(icone("avatar-default-symbolic", Gtk.IconSize.LARGE_TOOLBAR), False, False, 0)
@@ -343,7 +361,7 @@ class Janela(Gtk.ApplicationWindow):
         self.conta = self.app.nuvem.conta()
         self.contadores["galeria"].set_text(str(len(self.app.nuvem.galeria())))
         self.contadores["minhas"].set_text(str(len(self.app.skins.do_usuario())))
-        self.btn_desfazer.set_sensitive(self.app.skins.pode_desfazer())
+        self.btn_desfazer.set_visible(self.app.skins.pode_desfazer())
         self._rodape()
         for p in self.paginas.values():
             p.atualizar()
@@ -511,6 +529,15 @@ class Janela(Gtk.ApplicationWindow):
                         "Desfazer", self.desfazer, segundos=10))
 
     def desfazer(self):
+        if self.ocupado or not self.app.skins.pode_desfazer():
+            return
+        nome = self.app.skins.nome_antes_da_troca()
+        texto = (f"O desktop volta para “{nome}”, o visual de antes da última troca."
+                 if nome else "O desktop volta ao visual que estava antes da última troca.")
+        self.perguntar("Desfazer a última troca?", texto + " Você pode desfazer de novo depois.",
+                       "Desfazer", self._desfazer_confirmado, icone_nome="edit-undo-symbolic")
+
+    def _desfazer_confirmado(self):
         prefs = self.app.skins.preferencias()
         self.tarefa("Voltando ao visual anterior", lambda prog: self.app.skins.desfazer(prefs, prog),
                     sucesso="Visual anterior restaurado.")
@@ -663,6 +690,33 @@ class Janela(Gtk.ApplicationWindow):
             return
         self.recarregar()
         self.avisar(f"Olá, {self.conta.nome.split()[0]}!")
+
+    def editar_perfil(self):
+        if not self.conta:
+            self.ir_para("conta")
+            return
+        self._barra_ativa(False)
+        self.modal_perfil.editar(self._variante, self.conta)
+
+    def _salvar_perfil(self, d):
+        """Chamado pelo modal. Devolve o texto do erro, ou None se salvou."""
+        nuvem = self.app.nuvem
+        try:
+            if d["senha_nova"] or d["senha_atual"]:
+                nuvem.alterar_senha(d["senha_atual"], d["senha_nova"])
+            nuvem.atualizar_perfil(d["nome"], d["email"], d["bio"])
+            if d["foto_nova"]:
+                nuvem.definir_foto(d["foto_nova"])
+            elif d["remover_foto"]:
+                nuvem.definir_foto(None)
+        except MintSkinsErro as e:
+            return str(e)
+        finally:
+            if d["foto_nova"]:
+                Path(d["foto_nova"]).unlink(missing_ok=True)
+        self.recarregar()
+        self.avisar("Perfil atualizado." + (" Senha alterada." if d["senha_nova"] else ""))
+        return None
 
     def sair(self):
         self.app.nuvem.sair()

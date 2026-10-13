@@ -6,7 +6,7 @@ from gi.repository import Gtk
 
 from .. import __version__
 from . import textos as T
-from .widgets import (Avatar, BotaoFavorito, Capa, botao, css, data_br, grade, icone, link,
+from .widgets import (BotaoFavorito, avatar, Capa, botao, css, data_br, grade, icone, link,
                       preencher, rotulo, tamanho_br, vazio)
 
 
@@ -297,7 +297,7 @@ class Perfil(Detalhe):
         self.perfil = perfil
         self.limpar()
         topo = Gtk.Box(spacing=20)
-        topo.pack_start(Avatar(perfil.iniciais, grande=True), False, False, 0)
+        topo.pack_start(avatar(perfil, grande=True), False, False, 0)
         textos = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=4, valign=Gtk.Align.CENTER)
         nome = Gtk.Box(spacing=10)
         nome.pack_start(rotulo(perfil.nome, ["ms-titulo-hero"]), False, False, 0)
@@ -309,8 +309,15 @@ class Perfil(Detalhe):
             resumo.append(f"na galeria desde {data_br(perfil.desde, hora=False)}")
         if not perfil.oficial:
             resumo.append(contar(perfil.downloads, "download", "downloads"))
+        if perfil.bio:
+            textos.pack_start(rotulo(perfil.bio, ["ms-sobre-texto"], wrap=True), False, False, 0)
         textos.pack_start(rotulo(" · ".join(resumo), ["ms-dim"]), False, False, 0)
         topo.pack_start(textos, True, True, 0)
+        if j.conta and j.conta.id == perfil.id:
+            b = botao("Editar perfil", "ms-secundario", icone_nome="document-edit-symbolic",
+                      ao_clicar=j.editar_perfil)
+            b.set_valign(Gtk.Align.CENTER)
+            topo.pack_end(b, False, False, 0)
         self.caixa.pack_start(topo, False, False, 0)
         g = grade()
         v = vazio("Nenhuma skin publicada", "Quando publicar, as skins aparecem aqui.")
@@ -378,13 +385,17 @@ class Conta(Pagina):
     def _logado(self, conta):
         j = self.j
         topo = css(Gtk.Box(spacing=18), "ms-hero")
-        topo.pack_start(Avatar(conta.iniciais, grande=True), False, False, 0)
+        topo.pack_start(avatar(conta, grande=True), False, False, 0)
         textos = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=4, valign=Gtk.Align.CENTER)
         textos.pack_start(rotulo(conta.nome, ["ms-titulo-hero"]), False, False, 0)
+        if conta.bio:
+            textos.pack_start(rotulo(conta.bio, ["ms-sobre-texto"], wrap=True), False, False, 0)
         textos.pack_start(rotulo(f"{conta.email} · desde {data_br(conta.criada_em, hora=False)}", ["ms-dim"]),
                           False, False, 0)
         topo.pack_start(textos, True, True, 0)
         botoes = Gtk.Box(spacing=8, valign=Gtk.Align.CENTER)
+        botoes.pack_start(botao("Editar perfil", "ms-primario", icone_nome="document-edit-symbolic",
+                                ao_clicar=j.editar_perfil), False, False, 0)
         botoes.pack_start(botao("Meu perfil", "ms-secundario", ao_clicar=lambda: j.abrir_perfil(conta.id)),
                           False, False, 0)
         botoes.pack_start(botao("Sair", "ms-fantasma", ao_clicar=j.sair), False, False, 0)

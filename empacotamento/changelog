@@ -1,3 +1,12 @@
+mintskins (1.0.4) stable; urgency=medium
+
+  * Editar perfil: foto, nome, bio, e-mail e senha.
+  * Desfazer pede confirmacao e mostra para qual skin o desktop volta.
+  * Botao "Desfazer" com texto, so aparece quando ha troca para desfazer.
+  * Botoes da janela e icones seguem o tema do sistema.
+
+ -- MintSkins <PablUoo@users.noreply.github.com>  Tue, 13 Oct 2026 17:00:00 -0300
+
 mintskins (1.0.3) stable; urgency=medium
 
   * Aviso de versao nova em um popup, com o resto da janela borrado.

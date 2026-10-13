@@ -2,19 +2,12 @@
 import re
 from html import escape
 
-import cairo
-import gi
+from gi.repository import Gtk
 
-gi.require_version("Gtk", "3.0")
-gi.require_version("Gdk", "3.0")
-from gi.repository import Gdk, GdkPixbuf, GLib, Gtk  # noqa: E402
-
-from .. import __version__  # noqa: E402
-from . import tema  # noqa: E402
-from .widgets import Marca, botao, css, rotulo  # noqa: E402
-
-TINTA = {"escura": (20 / 255, 21 / 255, 31 / 255, 0.55), "clara": (247 / 255, 246 / 255, 241 / 255, 0.55)}
-
+from .. import __version__
+from . import tema
+from .modal import ModalBorrado
+from .widgets import Marca, botao, css, rotulo
 
 def notas_em_markup(md):
     """O texto da release (Markdown do GitHub) em markup Pango simples."""
@@ -38,75 +31,11 @@ def notas_em_markup(md):
     return texto or "Correções e melhorias."
 
 
-def _desfocar(pix):
-    """Desfoque barato: reduz muito e amplia de novo, duas vezes."""
-    w, h = pix.get_width(), pix.get_height()
-    pw, ph = max(1, w // 14), max(1, h // 14)
-    p = pix.scale_simple(pw, ph, GdkPixbuf.InterpType.HYPER)
-    p = p.scale_simple(max(1, w // 4), max(1, h // 4), GdkPixbuf.InterpType.BILINEAR)
-    return p.scale_simple(pw, ph, GdkPixbuf.InterpType.HYPER)
-
-
-class Vidro(Gtk.DrawingArea):
-    """Desenha uma foto borrada do widget de baixo e engole os cliques."""
-
-    def __init__(self, alvo):
-        super().__init__()
-        self.alvo, self.tinta = alvo, TINTA["escura"]
-        self._foto, self._tam, self._agendado = None, None, False
-        self.add_events(Gdk.EventMask.BUTTON_PRESS_MASK | Gdk.EventMask.BUTTON_RELEASE_MASK
-                        | Gdk.EventMask.SCROLL_MASK | Gdk.EventMask.SMOOTH_SCROLL_MASK)
-        for sinal in ("button-press-event", "button-release-event", "scroll-event"):
-            self.connect(sinal, lambda *_: True)
-
-    def fotografar(self):
-        self._agendado = False
-        w, h = self.alvo.get_allocated_width(), self.alvo.get_allocated_height()
-        if w < 2 or h < 2:
-            return False
-        esc = self.alvo.get_scale_factor()
-        sup = cairo.ImageSurface(cairo.FORMAT_ARGB32, w * esc, h * esc)
-        sup.set_device_scale(esc, esc)
-        self.alvo.draw(cairo.Context(sup))
-        pix = Gdk.pixbuf_get_from_surface(sup, 0, 0, w * esc, h * esc)
-        self._foto, self._tam = (_desfocar(pix) if pix else None), (w, h)
-        self.queue_draw()
-        return False
-
-    def do_draw(self, cr):
-        w, h = self.get_allocated_width(), self.get_allocated_height()
-        if self._foto and self._tam == (w, h):
-            cr.save()
-            cr.scale(w / self._foto.get_width(), h / self._foto.get_height())
-            Gdk.cairo_set_source_pixbuf(cr, self._foto, 0, 0)
-            cr.get_source().set_filter(cairo.FILTER_GOOD)
-            cr.get_source().set_extend(cairo.EXTEND_PAD)
-            cr.paint()
-            cr.restore()
-        elif not self._agendado:      # janela mudou de tamanho: tira outra foto
-            self._agendado = True
-            GLib.idle_add(self.fotografar)
-        cr.set_source_rgba(*self.tinta)
-        cr.paint()
-        return False
-
-
-class PopupAtualizacao(Gtk.Revealer):
+class PopupAtualizacao(ModalBorrado):
     """Estados: verificando, nova, sem_novidade, progresso, pronto, erro."""
 
     def __init__(self, alvo, ao_atualizar, ao_pular, ao_reiniciar, ao_tentar_de_novo, ao_fechar=None):
-        super().__init__(transition_type=Gtk.RevealerTransitionType.CROSSFADE, transition_duration=180)
-        self.set_no_show_all(True)
-        self._ao_fechar = ao_fechar
-        self.ocupado = False
-        camada = Gtk.Overlay()
-        self.vidro = Vidro(alvo)
-        camada.add(self.vidro)
-        self.cartao = css(Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=18,
-                                  halign=Gtk.Align.CENTER, valign=Gtk.Align.CENTER), "ms-popup")
-        self.cartao.set_size_request(520, -1)
-        camada.add_overlay(self.cartao)
-        self.add(camada)
+        super().__init__(alvo, ao_fechar)
 
         topo = Gtk.Box(spacing=16)
         topo.pack_start(Marca(tema.SIMBOLO, 56), False, False, 0)
@@ -163,32 +92,6 @@ class PopupAtualizacao(Gtk.Revealer):
             "reiniciar": ("Reiniciar agora", "ms-primario", ao_reiniciar),
             "tentar": ("Tentar de novo", "ms-primario", ao_tentar_de_novo),
         }
-        self.connect("notify::child-revealed", self._revelou)
-
-    # ---------------------------------------------------------------- abrir / fechar
-    @property
-    def aberto(self):
-        return self.get_visible() and self.get_reveal_child()
-
-    def abrir(self, variante):
-        self.vidro.tinta = TINTA.get(variante, TINTA["escura"])
-        if not self.aberto:
-            self.vidro.fotografar()
-            self.set_visible(True)
-            self.get_child().show_all()
-            self.set_reveal_child(True)
-
-    def fechar(self):
-        if self.ocupado or not self.aberto:
-            return
-        self.set_reveal_child(False)
-        if self._ao_fechar:
-            self._ao_fechar()
-
-    def _revelou(self, *_):
-        if not self.get_child_revealed() and not self.get_reveal_child():
-            self.set_visible(False)
-
     def _botoes(self, *nomes):
         for f in self.botoes.get_children():
             f.destroy()

@@ -1,7 +1,5 @@
-"""Paleta da marca MintSkins, em versao clara e escura, e o visual fixo do app."""
+"""Paleta da marca MintSkins, em versao clara e escura."""
 from pathlib import Path
-
-from gi.repository import GLib, Gtk
 
 MARCA = Path(__file__).with_name("marca")
 
@@ -61,29 +59,3 @@ def logo(variante):
 SIMBOLO = MARCA / "simbolo.svg"
 SINO = MARCA / "sino-symbolic.svg"
 
-
-# O app nao veste a skin do desktop (botoes de janela do macOS, icones, etc.):
-# so neste processo, usa sempre o visual padrao do GTK. O sistema nao muda.
-FIXOS = {"gtk-theme-name": "Adwaita", "gtk-icon-theme-name": "Adwaita",
-         "gtk-decoration-layout": "menu:minimize,maximize,close"}
-SISTEMA = {}
-
-
-def fixar_visual(ao_mudar_tema=None):
-    """Guarda o visual do sistema (para a aparencia automatica) e fixa o do app.
-    Quando a skin do desktop muda, o GTK reescreve os valores; aqui voltam ao padrao."""
-    cfg = Gtk.Settings.get_default()
-    SISTEMA["escuro"] = cfg.props.gtk_application_prefer_dark_theme
-
-    def fixar(_cfg=None, _spec=None, prop=None):
-        valor = cfg.get_property(prop)
-        if valor == FIXOS[prop]:
-            return
-        SISTEMA[prop] = valor
-        cfg.set_property(prop, FIXOS[prop])
-        if prop == "gtk-theme-name" and ao_mudar_tema and _spec is not None:
-            GLib.idle_add(ao_mudar_tema)
-
-    for prop in FIXOS:
-        fixar(prop=prop)
-        cfg.connect(f"notify::{prop}", fixar, prop)

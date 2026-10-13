@@ -8,7 +8,7 @@ import shutil
 from datetime import datetime
 from pathlib import Path
 
-from ..dominio.conta import Conta, Perfil, validar_cadastro
+from ..dominio.conta import Conta, Perfil, validar_cadastro, validar_perfil, validar_senha
 from ..dominio.erros import (CredenciaisInvalidas, DadosInvalidos, LoginNecessario,
                              SemPermissao, SkinNaoEncontrada)
 from ..dominio.galeria import ItemGaleria
@@ -96,9 +96,50 @@ class NuvemLocal:
         self._gravar("sessoes.json", sessoes, privado=True)
         return token
 
-    @staticmethod
-    def _conta(cid, c):
-        return Conta(id=cid, nome=c["nome"], email=c["email"], criada_em=_data(c.get("criada_em")))
+    def _foto(self, cid):
+        p = self.raiz / "fotos" / f"{cid}.png"
+        return str(p) if p.is_file() else None
+
+    def _conta(self, cid, c):
+        return Conta(id=cid, nome=c["nome"], email=c["email"], criada_em=_data(c.get("criada_em")),
+                     bio=c.get("bio", ""), foto=self._foto(cid))
+
+    def atualizar_perfil(self, token, nome, email, bio):
+        conta = self._exigir(token)
+        nome, email, bio = validar_perfil(nome, email, bio)
+        contas = self._ler("contas.json", {})
+        if any(c["email"] == email for cid, c in contas.items() if cid != conta.id):
+            raise DadosInvalidos("Esse e-mail já é usado por outra conta.")
+        contas[conta.id].update(nome=nome, email=email, bio=bio)
+        self._gravar("contas.json", contas, privado=True)
+        return self._conta(conta.id, contas[conta.id])
+
+    def definir_foto(self, token, imagem_png):
+        """imagem_png: arquivo PNG ja recortado; None tira a foto."""
+        conta = self._exigir(token)
+        destino = self.raiz / "fotos" / f"{conta.id}.png"
+        if imagem_png:
+            destino.parent.mkdir(parents=True, exist_ok=True)
+            tmp = destino.with_suffix(".tmp")
+            shutil.copyfile(imagem_png, tmp)
+            tmp.replace(destino)
+        else:
+            destino.unlink(missing_ok=True)
+        return self.conta(token)
+
+    def alterar_senha(self, token, atual, nova):
+        conta = self._exigir(token)
+        contas = self._ler("contas.json", {})
+        c = contas[conta.id]
+        if not hmac.compare_digest(c["hash"], _hash(atual or "", c["sal"])):
+            raise CredenciaisInvalidas("A senha atual está incorreta.")
+        validar_senha(nova)
+        c["sal"] = secrets.token_hex(16)
+        c["hash"] = _hash(nova, c["sal"])
+        self._gravar("contas.json", contas, privado=True)
+        # outras sessoes desta conta caem; esta continua
+        sessoes = {t: cid for t, cid in self._ler("sessoes.json", {}).items() if cid != conta.id or t == token}
+        self._gravar("sessoes.json", sessoes, privado=True)
 
     def _exigir(self, token):
         conta = self.conta(token)
@@ -117,8 +158,9 @@ class NuvemLocal:
             d = json.loads((pasta / "item.json").read_text(encoding="utf-8"))
         except (OSError, ValueError):
             raise SkinNaoEncontrada("Skin não encontrada na galeria.") from None
+        autor = self._ler("contas.json", {}).get(d["autor_id"], {})   # nome sempre o atual do perfil
         return ItemGaleria(id=item_id, nome=d["nome"], autor_id=d["autor_id"],
-                           autor_nome=d["autor_nome"], descricao=d.get("descricao", ""),
+                           autor_nome=autor.get("nome", d["autor_nome"]), descricao=d.get("descricao", ""),
                            publica=d.get("publica", True), publicada_em=_data(d.get("publicada_em")),
                            downloads=d.get("downloads", 0), tamanho=d.get("tamanho", 0),
                            dock=d.get("dock", False), pasta=pasta / "skin",
@@ -235,4 +277,5 @@ class NuvemLocal:
         if not c:
             return None
         return Perfil(id=autor_id, nome=c["nome"], desde=_data(c.get("criada_em")),
-                      itens=[i for i in self.galeria() if i.autor_id == autor_id])
+                      itens=[i for i in self.galeria() if i.autor_id == autor_id],
+                      bio=c.get("bio", ""), foto=self._foto(autor_id))

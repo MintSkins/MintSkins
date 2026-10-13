@@ -699,3 +699,11 @@ popover.ms-notificacoes separator {
   min-width: 8px;
   min-height: 8px;
 }
+
+.ms-popup-icone {
+  background-color: @ms_destaque_suave;
+  color: @ms_destaque_texto;
+  border-radius: 999px;
+  min-width: 48px;
+  min-height: 48px;
+}

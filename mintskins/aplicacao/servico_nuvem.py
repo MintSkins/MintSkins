@@ -38,6 +38,15 @@ class ServicoNuvem:
             self.nuvem.sair(self.token)
         self.estado.definir_sessao(None)
 
+    def atualizar_perfil(self, nome, email, bio):
+        return self.nuvem.atualizar_perfil(self._exigir_login(), nome, email, bio)
+
+    def definir_foto(self, imagem_png):
+        return self.nuvem.definir_foto(self._exigir_login(), imagem_png)
+
+    def alterar_senha(self, atual, nova):
+        self.nuvem.alterar_senha(self._exigir_login(), atual, nova)
+
     def _exigir_login(self):
         if not self.conta():
             raise LoginNecessario("Entre na sua conta para continuar.")
