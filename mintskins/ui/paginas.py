@@ -113,15 +113,13 @@ class Inicio(Pagina):
         topo = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=4)
         topo.pack_start(self.saudacao, False, False, 0)
         topo.pack_start(self.resumo, False, False, 0)
-        self.aviso_versao = aviso("software-update-available-symbolic", "", "Veja o que mudou e atualize.",
-                                  ("Atualizar", j.atualizar_app), ("Agora não", j.ignorar_versao, "ms-secundario"))
         self.aviso_backup = aviso("dialog-warning-symbolic", T.AVISO_BACKUP_TITULO, T.AVISO_BACKUP_TEXTO,
                                   (T.SALVAR, lambda: j.salvar_atual(primeiro_backup=True)))
         self.hero = Gtk.Box()
         self.recentes = self._secao("Suas skins recentes", "Ver todas", "minhas")
         self.vazio_recentes = vazio(*T.VAZIO_MINHAS, (T.SALVAR, j.salvar_atual))
         self.destaques = self._secao("Destaques da galeria", "Abrir galeria", "galeria")
-        for w in (topo, self.aviso_versao, self.aviso_backup, self.hero, self.recentes.caixa,
+        for w in (topo, self.aviso_backup, self.hero, self.recentes.caixa,
                   self.vazio_recentes, self.destaques.caixa):
             self.caixa.pack_start(w, False, False, 0)
 
@@ -146,10 +144,6 @@ class Inicio(Pagina):
         minhas = j.app.skins.do_usuario()
         galeria = j.app.nuvem.galeria()
         self.resumo.set_text(f"{contar(len(minhas), 'skin salva', 'skins salvas')} · {len(galeria)} na galeria")
-        nova = j.nova_versao
-        self.aviso_versao.set_visible(bool(nova))
-        if nova:
-            self.aviso_versao.titulo.set_text(f"MintSkins {nova.versao} disponível")
         self.aviso_backup.set_visible(j.app.skins.precisa_backup())
         self._hero(j.ativa)
         preencher(self.recentes.grade, self.vazio_recentes, [j.card_local(s) for s in minhas[:4]])
@@ -424,8 +418,21 @@ class Preferencias(Pagina):
         combo.connect("changed", lambda c: j.mudar_aparencia(c.get_active_id()))
         self.caixa.pack_start(grupo("Aparência", [linha(*T.PREF_TEMA, combo)]), False, False, 0)
 
+        inicio = Gtk.Switch(active=prefs.iniciar_com_sistema)
+        inicio.connect("notify::active", lambda s, _p: j.mudar_inicio_automatico(s.get_active()))
+        linhas = [linha("Iniciar com o sistema",
+                        "Abre o MintSkins ao ligar o computador, direto no ícone perto do relógio.", inicio)]
+        if j.get_application().bandeja:
+            sw = Gtk.Switch(active=prefs.segundo_plano)
+            sw.connect("notify::active", lambda s, _p: j.mudar_segundo_plano(s.get_active()))
+            linhas.append(linha(
+                "Continuar rodando ao fechar a janela",
+                "O MintSkins fica no ícone perto do relógio e avisa quando sair versão nova. "
+                "Para sair de vez, clique com o botão direito no ícone e escolha Fechar.", sw))
+        self.caixa.pack_start(grupo("Segundo plano", linhas), False, False, 0)
+
         self.caixa.pack_start(grupo("Atualizações", [
-            linha("Procurar versões novas", "Verifica no GitHub ao abrir o MintSkins.",
+            linha("Procurar versões novas", "Verifica no GitHub ao abrir e a cada 12 horas.",
                   self._chave(prefs, "verificar_atualizacoes")),
             linha(f"Versão instalada: {__version__}", None,
                   botao("Verificar agora", "ms-secundario", ao_clicar=lambda: j.verificar_versao(True))),

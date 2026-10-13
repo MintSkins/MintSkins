@@ -16,6 +16,7 @@ AJUDA = """MintSkins {v} — troque o visual do Linux Mint Cinnamon
   mintskins atualizar            procura e instala uma versao nova
   mintskins exportar <skin> <arquivo.mintskins>
   mintskins importar <arquivo.mintskins | pasta>
+  mintskins --segundo-plano      abre so o icone perto do relogio
   mintskins --version
 """
 
@@ -28,9 +29,11 @@ def _progresso(texto, fracao=None):
 def main(argv):
     app = montar()
     servico = app.skins
-    if not argv or argv[0].endswith(EXTENSOES_ACEITAS):   # sem argumentos ou "abrir com" um .mintskins
+    if not argv or argv[0].endswith(EXTENSOES_ACEITAS) or argv == ["--segundo-plano"]:
+        # sem argumentos, "abrir com" um .mintskins, ou o inicio junto com o sistema
         from .ui.app import main as gui
-        return gui(app, [sys.argv[0], *argv])
+        oculto = argv == ["--segundo-plano"]
+        return gui(app, [sys.argv[0], *([] if oculto else argv)], oculto=oculto)
     cmd, args = argv[0], argv[1:]
     if cmd in ("-h", "--help", "ajuda"):
         print(AJUDA.format(v=__version__))

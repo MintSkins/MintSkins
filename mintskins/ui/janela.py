@@ -14,8 +14,11 @@ from gi.repository import Gdk, GdkPixbuf, Gio, GLib, Gtk  # noqa: E402
 
 from .. import __version__  # noqa: E402
 from ..dominio.erros import LoginNecessario, MintSkinsErro  # noqa: E402
+from ..dominio.notificacao import ACAO_ATUALIZACAO  # noqa: E402
 from ..dominio.skin import EXTENSAO, EXTENSOES_ACEITAS  # noqa: E402
 from . import dialogos, paginas, tema  # noqa: E402
+from .atualizacao import PopupAtualizacao  # noqa: E402
+from .notificacoes import Sino  # noqa: E402
 from . import textos as T  # noqa: E402
 from .widgets import Avatar, Card, Marca, botao, css, data_br, icone, rotulo  # noqa: E402
 
@@ -43,11 +46,15 @@ class Janela(Gtk.ApplicationWindow):
         self._estilo = Gtk.CssProvider()
         Gtk.StyleContext.add_provider_for_screen(Gdk.Screen.get_default(), self._estilo,
                                                  Gtk.STYLE_PROVIDER_PRIORITY_APPLICATION)
+        tema.fixar_visual(ao_mudar_tema=self.aplicar_tema)
         self.aplicar_tema()
+        self.app.notificacoes.ao_abrir(__version__)
 
         self._barra()
+        raiz = Gtk.Overlay()
+        self.add(raiz)
         corpo = Gtk.Box()
-        self.add(corpo)
+        raiz.add(corpo)
         corpo.pack_start(self._lateral(), False, False, 0)
         sobre = Gtk.Overlay()
         corpo.pack_start(sobre, True, True, 0)
@@ -62,18 +69,43 @@ class Janela(Gtk.ApplicationWindow):
         for nome, p in self.paginas.items():
             self.pilha.add_named(p.widget, nome)
         self._flutuantes(sobre)
+        self.popup = PopupAtualizacao(corpo, ao_atualizar=self.atualizar_app, ao_pular=self.ignorar_versao,
+                                      ao_reiniciar=self.reiniciar, ao_tentar_de_novo=self.atualizar_app,
+                                      ao_fechar=lambda: self._barra_ativa(True))
+        raiz.add_overlay(self.popup)
+        self.connect("key-press-event", self._tecla)
+        self.connect("delete-event", self._fechando)
 
         self.drag_dest_set(Gtk.DestDefaults.ALL, [], Gdk.DragAction.COPY)
         self.drag_dest_add_uri_targets()
         self.connect("drag-data-received", self._soltou)
-        Gtk.Settings.get_default().connect("notify::gtk-theme-name", lambda *_: self.aplicar_tema())
 
-        self.show_all()
+        # a janela em si so aparece no present() do app (ao ligar o computador ela fica escondida)
+        self.get_titlebar().show_all()
+        self.get_child().show_all()
         self.recarregar()
         self.ir_para("inicio")
         self.set_focus(None)
+        GLib.timeout_add_seconds(3, self._verificacao_automatica)
+        # em segundo plano o app fica aberto por dias: confere de hora em hora (o servico limita a 12 h)
+        GLib.timeout_add_seconds(3600, lambda: self._verificacao_automatica() or True)
+
+    def _verificacao_automatica(self):
         if self.app.skins.preferencias().verificar_atualizacoes:
-            GLib.timeout_add_seconds(3, lambda: self.verificar_versao(False) and False)
+            self.verificar_versao(False)
+        return False
+
+    def _fechando(self, *_):
+        app = self.get_application()
+        if not app.em_segundo_plano():
+            return False
+        self.hide()
+        if self.app.notificacoes.primeira_vez("segundo_plano"):
+            n = Gio.Notification.new("O MintSkins continua aberto")
+            n.set_body("Ele fica no ícone perto do relógio. Para sair, clique com o botão direito "
+                       "no ícone e escolha “Fechar”.")
+            app.send_notification("segundo-plano", n)
+        return True
 
     def _icone(self):
         if Gtk.IconTheme.get_default().has_icon("mintskins"):
@@ -85,12 +117,9 @@ class Janela(Gtk.ApplicationWindow):
             pass
 
     def _variante_auto(self):
-        cfg = Gtk.Settings.get_default()
-        if cfg.props.gtk_application_prefer_dark_theme or "dark" in (cfg.props.gtk_theme_name or "").lower():
-            return "escura"
-        ok, cor = Gtk.StyleContext().lookup_color("theme_bg_color")
-        claridade = 0.299 * cor.red + 0.587 * cor.green + 0.114 * cor.blue if ok else 1
-        return "escura" if claridade < 0.5 else "clara"
+        """Segue o tema do sistema (o app usa o Adwaita, entao vale o nome guardado)."""
+        nome = (tema.SISTEMA.get("gtk-theme-name") or "").lower()
+        return "escura" if tema.SISTEMA.get("escuro") or "dark" in nome or "escuro" in nome else "clara"
 
     def aplicar_tema(self):
         escolha = self.app.skins.preferencias().aparencia
@@ -98,6 +127,7 @@ class Janela(Gtk.ApplicationWindow):
         if variante != self._variante:
             self._variante = variante
             self._estilo.load_from_data(tema.css(variante).encode())
+            Gtk.Settings.get_default().props.gtk_application_prefer_dark_theme = variante == "escura"
             for logo in self._logos:
                 logo.definir(tema.logo(variante))
 
@@ -116,6 +146,8 @@ class Janela(Gtk.ApplicationWindow):
         hb.pack_start(self.btn_voltar)
         self.trilha = css(Gtk.Box(spacing=4), "ms-trilha")
         hb.pack_start(self.trilha)
+        self.sino = Sino(self.app.notificacoes, self._notificacao_clicada)
+        hb.pack_end(self.sino)
         hb.pack_end(botao(T.SALVAR, "ms-primario", icone_nome="list-add-symbolic",
                           dica="Guarda o visual da tela como uma skin sua", ao_clicar=self.salvar_atual))
         hb.pack_end(botao("Importar", "ms-fantasma", icone_nome="document-open-symbolic",
@@ -123,6 +155,39 @@ class Janela(Gtk.ApplicationWindow):
         self.btn_desfazer = botao("", "ms-fantasma", icone_nome="edit-undo-symbolic", dica=T.DESFAZER,
                                   ao_clicar=self.desfazer)
         hb.pack_end(self.btn_desfazer)
+        self._hb = hb
+
+    def _barra_ativa(self, ativa):
+        """Com o popup aberto, os botoes da barra de titulo ficam travados."""
+        for w in self._hb.get_children():
+            w.set_sensitive(ativa)
+        if ativa:
+            self.btn_voltar.set_sensitive(len(self._trilha) > 1)
+            self.btn_desfazer.set_sensitive(self.app.skins.pode_desfazer())
+
+    def _tecla(self, _w, ev):
+        if ev.keyval == Gdk.KEY_Escape and self.popup.aberto:
+            self.popup.fechar()
+            return True
+        return False
+
+    def _abrir_popup(self):
+        self._barra_ativa(False)
+        self.popup.abrir(self._variante)
+
+    def _notificacao_clicada(self, notificacao):
+        if notificacao.acao == ACAO_ATUALIZACAO:
+            self.mostrar_atualizacao()
+
+    def mostrar_atualizacao(self):
+        if self.ocupado or self.popup.ocupado:
+            return False
+        if self.nova_versao:
+            self._abrir_popup()
+            self.popup.nova(self.nova_versao)
+        else:
+            self.verificar_versao(True)
+        return False
 
     def _lateral(self):
         lateral = css(Gtk.Box(orientation=Gtk.Orientation.VERTICAL), "ms-lateral")
@@ -605,44 +670,90 @@ class Janela(Gtk.ApplicationWindow):
         self.avisar("Você saiu da conta.")
 
     def verificar_versao(self, manual):
-        def depois(nova):
+        """Automatica: so aparece se houver versao nova. Manual: o popup mostra a busca."""
+        if manual:
+            if self.ocupado:
+                return
+            self._abrir_popup()
+            self.popup.verificando()
+
+        def depois(nova, falha):
             self.nova_versao = nova
-            self.paginas["inicio"].atualizar()
             if nova:
-                self.avisar(f"MintSkins {nova.versao} disponível.", "Atualizar", self.atualizar_app, segundos=12)
+                self.app.notificacoes.versao_disponivel(nova.versao)
+                self.sino.atualizar()
+            if self.ocupado or self.popup.ocupado:
+                return
+            if nova and not self.get_visible():      # em segundo plano: avisa pelo sistema
+                n = Gio.Notification.new(f"MintSkins {nova.versao} disponível")
+                n.set_body("Clique para ver as novidades e atualizar.")
+                n.set_default_action("app.atualizacao")
+                self.get_application().send_notification("atualizacao", n)
+                return
+            if nova:
+                self._abrir_popup()
+                self.popup.nova(nova)
+            elif manual and falha:
+                self.popup.erro(falha)
             elif manual:
-                self.avisar(f"Você já tem a versão mais recente ({__version__}).")
+                self.popup.sem_novidade()
 
         def rodar():
-            nova = None
+            nova, falha = None, None
             try:
                 nova = self.app.atualizacoes.verificar(forcar=manual)
             except MintSkinsErro as e:
-                if manual:
-                    GLib.idle_add(dialogos.erro, self, "Atualizações", str(e))
-            GLib.idle_add(depois, nova)
+                falha = str(e)
+            GLib.idle_add(depois, nova, falha)
         threading.Thread(target=rodar, daemon=True).start()
 
     def atualizar_app(self):
+        """Baixa e instala a versao nova sem sair do app."""
         nova = self.nova_versao
         if not nova:
+            self.verificar_versao(True)
             return
-        if not nova.pacote_url:
-            self.abrir_url(nova.pagina)
+        if self.ocupado:
             return
-        notas = (nova.notas or "Correções e melhorias.").strip()
-        if dialogos.confirmar(self, f"Atualizar para o MintSkins {nova.versao}?",
-                              f"{notas[:600]}\n\nO pacote vem do GitHub do projeto. "
-                              "Pede a senha de administrador.", "Atualizar"):
-            self.tarefa(f"Atualizando para {nova.versao}", lambda _p: self.app.atualizacoes.atualizar(nova),
-                        ao_terminar=lambda _r: self.avisar("Atualizado. Reinicie para usar a versão nova.",
-                                                           "Reiniciar", self.reiniciar, segundos=30))
+        self.ocupado = True
+        self._abrir_popup()
+        self.popup.baixando(nova.versao)
+
+        def ao_baixar(baixados, total):
+            GLib.idle_add(self.popup.baixando, nova.versao, baixados, total)
+
+        def rodar():
+            falha = None
+            try:
+                self.app.atualizacoes.atualizar(
+                    nova, ao_baixar, lambda: GLib.idle_add(self.popup.instalando, nova.versao))
+            except Exception as e:  # noqa: BLE001
+                falha = e
+                if not isinstance(e, MintSkinsErro):
+                    traceback.print_exc()
+            GLib.idle_add(fim, falha)
+
+        def fim(falha):
+            self.ocupado = False
+            if falha:
+                self.popup.erro(str(falha) if isinstance(falha, MintSkinsErro)
+                                else "A conexão falhou no meio do download. Tente de novo.")
+                return
+            self.app.notificacoes.remover(f"versao:{nova.versao}")
+            self.app.notificacoes.adicionar(f"pronta:{nova.versao}", f"MintSkins {nova.versao} instalado",
+                                            "Reinicie o MintSkins para usar a versão nova.", "sucesso")
+            self.sino.atualizar()
+            self.popup.pronto(nova.versao)
+
+        threading.Thread(target=rodar, daemon=True).start()
 
     def ignorar_versao(self):
         if self.nova_versao:
             self.app.atualizacoes.ignorar(self.nova_versao)
+            self.app.notificacoes.remover(f"versao:{self.nova_versao.versao}")
+            self.sino.atualizar()
         self.nova_versao = None
-        self.paginas["inicio"].atualizar()
+        self.popup.fechar()
 
     def reiniciar(self):
         subprocess.Popen(["sh", "-c", "sleep 1; exec mintskins"], start_new_session=True)
@@ -652,6 +763,17 @@ class Janela(Gtk.ApplicationWindow):
         prefs = self.app.skins.preferencias()
         setattr(prefs, campo, valor)
         self.app.skins.gravar_preferencias(prefs)
+
+    def mudar_inicio_automatico(self, ativo):
+        self.mudar_preferencia("iniciar_com_sistema", ativo)
+        try:
+            self.app.inicio_automatico.definir(ativo)
+        except OSError as e:
+            dialogos.erro(self, "Iniciar com o sistema", str(e))
+
+    def mudar_segundo_plano(self, ativo):
+        self.mudar_preferencia("segundo_plano", ativo)
+        self.get_application().mostrar_bandeja(ativo)
 
     def mudar_aparencia(self, aparencia):
         self.mudar_preferencia("aparencia", aparencia or "auto")

@@ -31,8 +31,11 @@ class ServicoAtualizacoes:
     def ignorar(self, nova: NovaVersao) -> None:
         self.estado.gravar_valor("versao_ignorada", nova.versao)
 
-    def atualizar(self, nova: NovaVersao) -> None:
-        pacote = self.fonte.baixar(nova, self.pasta)
+    def atualizar(self, nova: NovaVersao, ao_baixar=None, ao_instalar=None) -> None:
+        """ao_baixar(baixados, total) durante o download; ao_instalar() antes de pedir a senha."""
+        pacote = self.fonte.baixar(nova, self.pasta, ao_baixar)
+        if ao_instalar:
+            ao_instalar()
         try:
             self.fonte.instalar(pacote)
         finally:

@@ -5,12 +5,14 @@ from dataclasses import dataclass
 
 from .aplicacao.servico import ServicoSkins
 from .aplicacao.servico_atualizacoes import ServicoAtualizacoes
+from .aplicacao.servico_notificacoes import ServicoNotificacoes
 from .aplicacao.servico_nuvem import ServicoNuvem
 from .infra import caminhos
 from .infra.atualizador import AtualizadorGitHub
 from .infra.capas import GeradorCapas
 from .infra.cinnamon import DesktopCinnamon
 from .infra.estado import EstadoArquivo
+from .infra.inicio_automatico import InicioAutomatico
 from .infra.legado import MigradorMacSh
 from .infra.nuvem_local import NuvemLocal
 from .infra.repositorio import RepositorioArquivos
@@ -21,6 +23,8 @@ class Aplicativo:
     skins: ServicoSkins
     nuvem: ServicoNuvem
     atualizacoes: ServicoAtualizacoes
+    notificacoes: ServicoNotificacoes
+    inicio_automatico: InicioAutomatico
     capas: GeradorCapas
 
 
@@ -44,5 +48,7 @@ def montar():
         skins=skins,
         nuvem=ServicoNuvem(NuvemLocal(caminhos.NUVEM_LOCAL), estado, skins),
         atualizacoes=ServicoAtualizacoes(AtualizadorGitHub(), estado, caminhos.CACHE / "atualizacoes"),
+        notificacoes=ServicoNotificacoes(estado),
+        inicio_automatico=InicioAutomatico(),
         capas=GeradorCapas(caminhos.CACHE / "capas"),
     )

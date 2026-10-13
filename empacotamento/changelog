@@ -1,3 +1,14 @@
+mintskins (1.0.3) stable; urgency=medium
+
+  * Aviso de versao nova em um popup, com o resto da janela borrado.
+  * A atualizacao e baixada e instalada dentro do app, com progresso.
+  * Sino de notificacoes na barra de titulo.
+  * O app usa sempre o visual padrao, sem herdar a skin do desktop.
+  * Abre uma vez so e continua em segundo plano no icone perto do relogio.
+  * Opcao de iniciar junto com o sistema, direto no icone.
+
+ -- MintSkins <PablUoo@users.noreply.github.com>  Tue, 13 Oct 2026 16:00:00 -0300
+
 mintskins (1.0.2) stable; urgency=medium
 
   * O projeto passa a se chamar MintSkins, com o logo novo.

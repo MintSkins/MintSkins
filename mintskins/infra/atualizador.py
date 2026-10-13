@@ -58,18 +58,23 @@ class AtualizadorGitHub:
                     pass
         return nova
 
-    def baixar(self, nova, destino):
+    def baixar(self, nova, destino, progresso=None):
+        """progresso(baixados, total) a cada bloco; total e 0 se o servidor nao informar."""
         if not nova.pacote_url or not nova.pacote_url.startswith(ORIGENS_PERMITIDAS):
-            raise MintSkinsErro("Esta versão não tem pacote para instalar. Baixe pela página do GitHub.")
+            raise MintSkinsErro("O pacote desta versão ainda não foi publicado. Tente de novo mais tarde.")
         destino = Path(destino)
         destino.mkdir(parents=True, exist_ok=True)
         arq = destino / Path(nova.pacote_nome).name
         req = urllib.request.Request(nova.pacote_url, headers={"User-Agent": f"MintSkins/{__version__}"})
         h = hashlib.sha256()
         with urllib.request.urlopen(req, timeout=60) as r, open(arq, "wb") as f:
+            total, baixados = int(r.headers.get("Content-Length") or 0), 0
             while bloco := r.read(1 << 16):
                 h.update(bloco)
                 f.write(bloco)
+                baixados += len(bloco)
+                if progresso:
+                    progresso(baixados, total)
         if nova.sha256 and h.hexdigest() != nova.sha256:
             arq.unlink(missing_ok=True)
             raise MintSkinsErro("O pacote baixado não confere com o SHA256 publicado. Atualização cancelada.")

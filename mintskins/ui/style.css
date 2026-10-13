@@ -559,3 +559,143 @@ tooltip.background {
   color: @ms_texto;
   font-weight: 800;
 }
+
+/* ------------------------------------------------------------ popup de atualizacao */
+.ms-popup {
+  background-color: @ms_superficie;
+  color: @ms_texto;
+  border: 1px solid @ms_borda;
+  border-radius: 22px;
+  padding: 28px 30px 24px 30px;
+  margin: 24px;
+  box-shadow: 0 24px 70px rgba(0,0,0,0.35), 0 2px 8px @ms_sombra;
+}
+
+.ms-popup-titulo {
+  font-size: 21px;
+  font-weight: 800;
+  color: @ms_texto;
+}
+
+.ms-popup-rolagem {
+  background-color: @ms_superficie_2;
+  border-radius: 14px;
+}
+
+.ms-popup-rolagem > viewport {
+  background-color: transparent;
+}
+
+.ms-popup-notas {
+  color: @ms_texto;
+  padding: 14px 16px;
+  font-size: 13px;
+}
+
+.ms-popup progressbar trough {
+  background-color: @ms_superficie_2;
+  min-height: 8px;
+  border-radius: 999px;
+}
+
+.ms-popup progressbar progress {
+  background-color: @ms_destaque;
+  min-height: 8px;
+  border-radius: 999px;
+}
+
+/* ------------------------------------------------------------ sino de notificacoes */
+.ms-janela headerbar button.ms-sino {
+  background-image: none;
+  background-color: transparent;
+  border: 1px solid transparent;
+  box-shadow: none;
+  border-radius: 999px;
+  padding: 0 2px;
+  color: @ms_texto;
+}
+
+.ms-janela headerbar button.ms-sino:hover,
+.ms-janela headerbar button.ms-sino:checked {
+  background-color: @ms_superficie_2;
+}
+
+.ms-sino-contador {
+  background-color: @ms_destaque;
+  color: @ms_sobre_destaque;
+  border-radius: 999px;
+  font-size: 9px;
+  font-weight: 800;
+  min-width: 16px;
+  min-height: 16px;
+  padding: 0 4px;
+}
+
+popover.ms-notificacoes {
+  background-color: @ms_superficie;
+  color: @ms_texto;
+  border: 1px solid @ms_borda;
+  border-radius: 16px;
+  padding: 0;
+  box-shadow: 0 14px 40px @ms_sombra;
+}
+
+popover.ms-notificacoes separator {
+  background-color: @ms_borda;
+}
+
+.ms-notificacoes-cab {
+  padding: 12px 12px 10px 18px;
+}
+
+.ms-notificacoes-lista {
+  background-color: transparent;
+}
+
+.ms-notificacoes-lista row.ms-notificacao {
+  padding: 12px 16px;
+  border-bottom: 1px solid @ms_borda;
+  background-color: transparent;
+  color: @ms_texto;
+}
+
+.ms-notificacoes-lista row.ms-notificacao:hover {
+  background-color: @ms_superficie_2;
+}
+
+.ms-notificacoes-lista row.ms-nao-lida {
+  background-color: @ms_destaque_suave;
+}
+
+.ms-notificacao-titulo {
+  font-weight: 600;
+  color: @ms_texto;
+}
+
+.ms-nao-lida .ms-notificacao-titulo {
+  font-weight: 800;
+}
+
+.ms-notificacao-icone {
+  background-color: @ms_superficie_2;
+  border-radius: 999px;
+  min-width: 34px;
+  min-height: 34px;
+  color: @ms_texto_2;
+}
+
+.ms-notificacao-icone.ms-tipo-atualizacao {
+  background-color: @ms_destaque;
+  color: @ms_sobre_destaque;
+}
+
+.ms-notificacao-icone.ms-tipo-sucesso {
+  color: @ms_destaque_texto;
+}
+
+.ms-ponto-nao-lida {
+  background-color: @ms_destaque;
+  border-radius: 999px;
+  min-width: 8px;
+  min-height: 8px;
+}
