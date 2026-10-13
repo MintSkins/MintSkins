@@ -1,24 +1,24 @@
 <p align="center">
   <picture>
-    <source media="(prefers-color-scheme: dark)" srcset="mintskin/ui/marca/logo-escuro.svg">
-    <img src="mintskin/ui/marca/logo-claro.svg" alt="MintSkin" width="360">
+    <source media="(prefers-color-scheme: dark)" srcset="mintskins/ui/marca/logo-escuro.svg">
+    <img src="mintskins/ui/marca/logo-claro.svg" alt="MintSkins" width="360">
   </picture>
 </p>
 
 <p align="center"><strong>Troque o visual do seu Linux Mint Cinnamon com um clique.</strong></p>
 
 <p align="center">
-  <a href="https://github.com/PablUoo/MintSkin/releases"><img src="https://img.shields.io/github/v/release/PablUoo/MintSkin?color=FFC400&label=vers%C3%A3o&labelColor=14151F" alt="Versão"></a>
+  <a href="https://github.com/PablUoo/MintSkins/releases"><img src="https://img.shields.io/github/v/release/PablUoo/MintSkins?color=FFC400&label=vers%C3%A3o&labelColor=14151F" alt="Versão"></a>
   <img src="https://img.shields.io/badge/Linux%20Mint-Cinnamon-FFC400?labelColor=14151F" alt="Linux Mint Cinnamon">
   <img src="https://img.shields.io/badge/Python-3.10%2B-FFC400?labelColor=14151F" alt="Python 3.10+">
   <img src="https://img.shields.io/badge/GTK-3-FFC400?labelColor=14151F" alt="GTK 3">
 </p>
 
-O MintSkin guarda o visual do desktop como **skins**, cada uma com nome, capa e
+O MintSkins guarda o visual do desktop como **skins**, cada uma com nome, capa e
 autor. Salve quantas quiser, troque entre elas e sempre volte para a anterior.
 
 <p align="center">
-  <img src="docs/imagens/inicio-escuro.png" alt="Início do MintSkin no tema escuro" width="860">
+  <img src="docs/imagens/inicio-escuro.png" alt="Início do MintSkins no tema escuro" width="860">
 </p>
 
 <table>
@@ -38,7 +38,7 @@ autor. Salve quantas quiser, troque entre elas e sempre volte para a anterior.
       <sub><b>Minhas skins</b> · aplicar, renomear, enviar</sub>
     </td>
     <td align="center">
-      <img src="docs/imagens/sobre.png" alt="Sobre o MintSkin"><br>
+      <img src="docs/imagens/sobre.png" alt="Sobre o MintSkins"><br>
       <sub><b>Sobre</b> · marca e proprietário</sub>
     </td>
   </tr>
@@ -53,18 +53,18 @@ autor. Salve quantas quiser, troque entre elas e sempre volte para a anterior.
   fica salvo neste computador)
 - **Backup obrigatório** antes da primeira troca e **desfazer** a qualquer hora
 - **Atualização automática**: avisa quando sai uma versão nova e instala com um clique
-- Exporte e importe skins (`.mintskin`) para usar em outros computadores
+- Exporte e importe skins (`.mintskins`) para usar em outros computadores
 
 ## Instalar
 
 Baixe o `.deb` mais recente em
-[Releases](https://github.com/PablUoo/MintSkin/releases) e instale:
+[Releases](https://github.com/PablUoo/MintSkins/releases) e instale:
 
 ```bash
-sudo apt install ./mintskin_*_all.deb
+sudo apt install ./mintskins_*_all.deb
 ```
 
-Depois abra **MintSkin** no menu. Requisitos: Linux Mint com Cinnamon. O `apt`
+Depois abra **MintSkins** no menu. Requisitos: Linux Mint com Cinnamon. O `apt`
 instala o resto, inclusive o dock Plank.
 
 ## Usando
@@ -96,19 +96,19 @@ Ficam de fora: ícones da área de trabalho, preferências do Nemo, mouse e
 ## Linha de comando
 
 ```bash
-mintskin listar
-mintskin aplicar macos
-mintskin salvar "Meu tema"
-mintskin desfazer
-mintskin atualizar
-mintskin exportar macos ~/macos.mintskin
-mintskin importar ~/macos.mintskin
+mintskins listar
+mintskins aplicar macos
+mintskins salvar "Meu tema"
+mintskins desfazer
+mintskins atualizar
+mintskins exportar macos ~/macos.mintskins
+mintskins importar ~/macos.mintskins
 ```
 
 ## Desenvolvimento
 
 ```bash
-./bin/mintskin                            # roda sem instalar
-./build-deb.sh                            # gera dist/mintskin_<versão>_all.deb
+./bin/mintskins                            # roda sem instalar
+./build-deb.sh                            # gera dist/mintskins_<versão>_all.deb
 ./scripts/lancar-versao.sh 1.1.0          # publica uma versão nova
 ```

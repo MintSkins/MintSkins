@@ -1,0 +1,63 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<component type="desktop-application">
+  <id>io.github.pabluoo.MintSkins</id>
+  <metadata_license>CC0-1.0</metadata_license>
+  <name>MintSkins</name>
+  <summary>Troque o visual do Linux Mint Cinnamon com um clique</summary>
+  <developer id="io.github.pabluoo">
+    <name>MintSkins</name>
+  </developer>
+  <description>
+    <p>
+      O MintSkins guarda o visual do desktop como skins, cada uma com nome, capa e autor:
+      tema, ícones, cursor, fontes, painel e applets, extensões, dock, papel de parede,
+      tela de bloqueio e atalhos de teclado. Qualquer skin pode ser aplicada com um clique,
+      e a troca sempre pode ser desfeita.
+    </p>
+    <ul>
+      <li>Skin oficial macOS Tahoe incluída</li>
+      <li>Galeria com skins oficiais e da comunidade, perfis e favoritos</li>
+      <li>Conta para guardar e publicar skins</li>
+      <li>Backup obrigatório antes da primeira troca</li>
+      <li>Exportação e importação em arquivos .mintskins</li>
+      <li>Atualização automática</li>
+    </ul>
+  </description>
+  <categories>
+    <category>Settings</category>
+    <category>DesktopSettings</category>
+  </categories>
+  <launchable type="desktop-id">io.github.pabluoo.MintSkins.desktop</launchable>
+  <icon type="stock">mintskins</icon>
+  <url type="homepage">https://github.com/PablUoo/MintSkins</url>
+  <url type="bugtracker">https://github.com/PablUoo/MintSkins/issues</url>
+  <screenshots>
+    <screenshot type="default">
+      <caption>Início, com o visual em uso e as skins recentes</caption>
+      <image>https://raw.githubusercontent.com/PablUoo/MintSkins/main/docs/imagens/inicio-escuro.png</image>
+    </screenshot>
+    <screenshot>
+      <caption>Galeria de skins</caption>
+      <image>https://raw.githubusercontent.com/PablUoo/MintSkins/main/docs/imagens/galeria.png</image>
+    </screenshot>
+    <screenshot>
+      <caption>Minhas skins, no tema claro</caption>
+      <image>https://raw.githubusercontent.com/PablUoo/MintSkins/main/docs/imagens/minhas-skins.png</image>
+    </screenshot>
+  </screenshots>
+  <requires>
+    <display_length compare="ge">900</display_length>
+  </requires>
+  <supports>
+    <control>pointing</control>
+    <control>keyboard</control>
+  </supports>
+  <content_rating type="oars-1.1"/>
+  <releases>
+    <release version="1.0.0" date="2026-10-07">
+      <description>
+        <p>Primeira versão: skins, galeria, conta local, backup antes da primeira troca e atualização automática.</p>
+      </description>
+    </release>
+  </releases>
+</component>

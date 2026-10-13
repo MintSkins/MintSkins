@@ -1,0 +1,73 @@
+#!/bin/sh
+# Roda como root via pkexec: ajusta a tela de login (LightDM + slick-greeter).
+#   mintskins-login-helper aplicar <papel_de_parede> <tema> <icones> <cursor> <fonte>
+#   mintskins-login-helper restaurar
+set -eu
+CONF=/etc/lightdm/slick-greeter.conf
+BKP=/etc/lightdm/slick-greeter.conf.antes-do-mintskins
+BKP_ANTIGO=/etc/lightdm/slick-greeter.conf.antes-do-mintskin
+BKP_MAC_SH=/etc/lightdm/slick-greeter.conf.antes-do-mac
+
+[ "$(id -u)" -eq 0 ] || { echo "precisa ser root" >&2; exit 1; }
+[ -d /etc/lightdm ] || { echo "LightDM nao encontrado" >&2; exit 1; }
+
+# a pasta pessoal vem do usuario que chamou o pkexec, nunca dos argumentos
+USUARIO_HOME=$(getent passwd "${PKEXEC_UID:-}" | cut -d: -f6)
+[ -n "$USUARIO_HOME" ] || { echo "usuario desconhecido" >&2; exit 1; }
+
+nome_valido() { case "$1" in ""|*/*|.*) return 1 ;; esac; }
+
+case "${1:-}" in
+  aplicar)
+    [ $# -eq 6 ] || { echo "uso: $0 aplicar <fundo> <tema> <icones> <cursor> <fonte>" >&2; exit 2; }
+    fundo=$2 tema=$3 icones=$4 cursor=$5 fonte=$6
+    case "$fundo" in "$USUARIO_HOME"/*|/usr/share/*) ;; *) echo "papel de parede fora da pasta pessoal" >&2; exit 1 ;; esac
+    [ -f "$fundo" ] || { echo "papel de parede nao encontrado" >&2; exit 1; }
+    case "$fonte" in *"
+"*) exit 1 ;; esac
+    ext=${fundo##*.}
+    case "$ext" in jpg|jpeg|png|webp) ;; *) ext=jpg ;; esac
+    rm -f /usr/share/backgrounds/mintskins-fundo.* /usr/share/backgrounds/mintskin-fundo.*
+    destino=/usr/share/backgrounds/mintskins-fundo.$ext
+    cp -f "$fundo" "$destino" && chmod 644 "$destino"
+    # o greeter roda como usuario lightdm: temas precisam estar em /usr/share
+    for nome in "$tema" "$icones" "$cursor"; do
+      nome_valido "$nome" || continue
+      for origem in "$USUARIO_HOME/.themes/$nome" "$USUARIO_HOME/.local/share/themes/$nome" \
+                    "$USUARIO_HOME/.local/share/icons/$nome" "$USUARIO_HOME/.icons/$nome"; do
+        [ -d "$origem" ] || continue
+        case "$origem" in */themes/*|*/.themes/*) alvo=/usr/share/themes ;; *) alvo=/usr/share/icons ;; esac
+        if [ ! -d "$alvo/$nome" ]; then
+          cp -a --no-preserve=ownership "$origem" "$alvo/" && chmod -R a+rX "$alvo/$nome"
+        fi
+      done
+    done
+    if [ -f "$CONF" ] && [ ! -f "$BKP" ] && [ ! -f "$BKP_ANTIGO" ] && [ ! -f "$BKP_MAC_SH" ]; then cp "$CONF" "$BKP"; fi
+    cat > "$CONF" <<FIM
+[Greeter]
+background=$destino
+background-color=#000000
+draw-user-backgrounds=false
+draw-grid=false
+show-hostname=false
+show-a11y=false
+show-keyboard=false
+show-clock=true
+clock-format=%H:%M
+theme-name=$tema
+icon-theme-name=$icones
+cursor-theme-name=$cursor
+font-name=$fonte
+FIM
+    echo "tela de login atualizada"
+    ;;
+  restaurar)
+    if [ -f "$BKP" ]; then mv -f "$BKP" "$CONF"
+    elif [ -f "$BKP_ANTIGO" ]; then mv -f "$BKP_ANTIGO" "$CONF"
+    elif [ -f "$BKP_MAC_SH" ]; then mv -f "$BKP_MAC_SH" "$CONF"
+    else rm -f "$CONF"; fi
+    rm -f /usr/share/backgrounds/mintskins-fundo.* /usr/share/backgrounds/mintskin-fundo.* /usr/share/backgrounds/fundo-mac.*
+    echo "tela de login original restaurada"
+    ;;
+  *) echo "uso: $0 aplicar|restaurar" >&2; exit 2 ;;
+esac

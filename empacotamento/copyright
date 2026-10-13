@@ -1,13 +1,13 @@
 Format: https://www.debian.org/doc/packaging-manuals/copyright-format/1.0/
-Upstream-Name: MintSkin
-Upstream-Contact: https://github.com/PablUoo/MintSkin
-Source: https://github.com/PablUoo/MintSkin
+Upstream-Name: MintSkins
+Upstream-Contact: https://github.com/PablUoo/MintSkins
+Source: https://github.com/PablUoo/MintSkins
 
 Files: *
-Copyright: 2026 MintSkin
-Comment: O nome MintSkin e o logotipo "m" sao marcas do projeto MintSkin.
+Copyright: 2026 MintSkins
+Comment: O nome MintSkins e o logotipo "m" sao marcas do projeto MintSkins.
 
-Files: usr/share/mintskin/skins/*
+Files: usr/share/mintskins/skins/*
 Copyright: os autores de cada tema, conjunto de icones e fonte
 Comment: As skins incluidas trazem temas, icones e fontes de terceiros
  (MacTahoe, WhiteSur e outros). Cada um segue a licenca do seu autor.

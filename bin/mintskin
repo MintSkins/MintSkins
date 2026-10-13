@@ -1,9 +1,0 @@
-#!/bin/sh
-# Instalado: /usr/bin -> /usr/lib/mintskin | no repositorio: bin/ -> pasta acima
-DIR=$(dirname "$(readlink -f "$0")")
-if [ -d "$DIR/../lib/mintskin/mintskin" ]; then
-  BASE=$(readlink -f "$DIR/../lib/mintskin")
-else
-  BASE=$(dirname "$DIR")
-fi
-PYTHONPATH="$BASE${PYTHONPATH:+:$PYTHONPATH}" exec python3 -m mintskin "$@"

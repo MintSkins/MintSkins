@@ -1,13 +1,13 @@
-mintskin (1.0.1) stable; urgency=medium
+mintskins (1.0.1) stable; urgency=medium
 
   * Dock desligado em "Aplicativos de inicializacao" nao conta mais como ativo.
   * Ao aplicar skin sem dock, o Plank sai da inicializacao em qualquer entrada
     (outros nomes e /etc/xdg/autostart), sem deixar duplicados.
   * "Aplicar na tela de login" vem marcado por padrao.
 
- -- MintSkin <PablUoo@users.noreply.github.com>  Wed, 07 Oct 2026 18:00:00 -0300
+ -- MintSkins <PablUoo@users.noreply.github.com>  Wed, 07 Oct 2026 18:00:00 -0300
 
-mintskin (1.0.0) stable; urgency=medium
+mintskins (1.0.0) stable; urgency=medium
 
   * Primeira versao.
   * Skins com nome, capa e autor; skin oficial macOS Tahoe.
@@ -16,4 +16,4 @@ mintskin (1.0.0) stable; urgency=medium
   * Backup obrigatorio antes da primeira troca e desfazer.
   * Atualizacao automatica pelas Releases do GitHub.
 
- -- MintSkin <PablUoo@users.noreply.github.com>  Wed, 07 Oct 2026 15:30:00 -0300
+ -- MintSkins <PablUoo@users.noreply.github.com>  Wed, 07 Oct 2026 15:30:00 -0300

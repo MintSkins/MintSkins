@@ -1,0 +1,15 @@
+[Desktop Entry]
+Type=Application
+Name=MintSkins
+GenericName=Skin Manager
+GenericName[pt_BR]=Gerenciador de visuais
+Comment=Switch your Cinnamon desktop look with one click
+Comment[pt_BR]=Troque o visual do seu Linux Mint com um clique
+Exec=mintskins %f
+Icon=mintskins
+Terminal=false
+Categories=Settings;DesktopSettings;GTK;
+Keywords=theme;skin;look;panel;dock;macos;tema;visual;aparencia;
+MimeType=application/x-mintskins;
+StartupNotify=true
+OnlyShowIn=X-Cinnamon;

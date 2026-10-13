@@ -1,0 +1,52 @@
+.TH MINTSKINS 1 "2026" "MintSkins @VERSAO@" "Comandos do usuário"
+.SH NOME
+mintskins \- gerenciador de visuais (skins) para o Linux Mint Cinnamon
+.SH SINOPSE
+.B mintskins
+.br
+.B mintskins
+.I comando
+.RI [ argumentos ]
+.SH DESCRIÇÃO
+O MintSkins guarda o visual do desktop Cinnamon como skins e aplica qualquer
+uma delas com um clique. Sem argumentos, abre a interface gráfica.
+.SH COMANDOS
+.TP
+.B listar
+Lista as skins oficiais e as suas.
+.TP
+.BI aplicar " skin"
+Aplica uma skin pelo id ou pelo nome.
+.TP
+.BI salvar " nome"
+Salva o visual atual como uma skin nova.
+.TP
+.B desfazer
+Volta ao visual anterior à última troca.
+.TP
+.B atualizar
+Procura uma versão nova do MintSkins e oferece instalar.
+.TP
+.BI exportar " skin arquivo"
+Exporta uma skin para um arquivo .mintskins.
+.TP
+.BI importar " arquivo"
+Importa um arquivo .mintskins ou uma pasta de skin.
+.TP
+.B \-\-version
+Mostra a versão.
+.SH ARQUIVOS
+.TP
+.I ~/.local/share/mintskins/skins/
+Suas skins.
+.TP
+.I /usr/share/mintskins/skins/
+Skins oficiais.
+.TP
+.I ~/.config/mintskins/
+Preferências e skin ativa.
+.SH VEJA TAMBÉM
+.BR gsettings (1),
+.BR plank (1)
+.PP
+https://github.com/PablUoo/MintSkins

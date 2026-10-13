@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<mime-info xmlns="http://www.freedesktop.org/standards/shared-mime-info">
+  <mime-type type="application/x-mintskins">
+    <comment>MintSkins skin</comment>
+    <comment xml:lang="pt_BR">Skin do MintSkins</comment>
+    <sub-class-of type="application/gzip"/>
+    <icon name="mintskins"/>
+    <glob pattern="*.mintskins"/>
+    <glob pattern="*.mintskin"/>
+  </mime-type>
+</mime-info>

@@ -1,0 +1,60 @@
+"""Textos da interface."""
+
+APP = "MintSkins"
+SLOGAN = "Seu Linux Mint com a sua cara."
+URL_PROJETO = "https://github.com/PablUoo/MintSkins"
+PROPRIETARIO = "MintSkins"
+
+SOBRE_NOS = (
+    "O MintSkins deixa o Linux Mint com a sua cara, sem medo de estragar nada. "
+    "Cada visual vira uma skin com nome, capa e autor: você troca com um clique "
+    "e sempre consegue voltar.\n\n"
+    "Acreditamos que personalizar o computador deve ser simples, seguro e bonito. "
+    "Por isso o MintSkins guarda um backup antes da primeira troca, permite desfazer "
+    "qualquer mudança e reúne skins oficiais e da comunidade numa galeria.")
+LEGAL = ("© 2026 MintSkins. O nome MintSkins e o logotipo “m” são marcas do projeto MintSkins.\n"
+         "Projeto independente, sem vínculo com o Linux Mint, a Apple ou os autores dos temas.")
+
+NAV = {
+    "inicio": ("go-home-symbolic", "Início"),
+    "galeria": ("view-grid-symbolic", "Galeria"),
+    "minhas": ("folder-symbolic", "Minhas skins"),
+    "conta": ("avatar-default-symbolic", "Conta"),
+    "preferencias": ("preferences-system-symbolic", "Preferências"),
+    "sobre": ("help-about-symbolic", "Sobre"),
+}
+
+GALERIA = ("Galeria", "Skins oficiais e da comunidade. Baixe, aplique e favorite.")
+MINHAS = ("Minhas skins", "Os visuais salvos neste computador.")
+CONTA = ("Conta", "Guarde suas skins na sua conta e publique na galeria.")
+PREFERENCIAS = ("Preferências", None)
+SOBRE = ("Sobre", None)
+
+FILTROS = [("todas", "Todas"), ("oficiais", "Oficiais"), ("comunidade", "Comunidade"),
+           ("favoritas", "Favoritas")]
+
+EM_USO = "EM USO AGORA"
+SEM_BACKUP_TITULO = "Visual sem backup"
+SEM_BACKUP_TEXTO = "Este visual ainda não foi salvo. Salve para poder voltar a ele."
+AVISO_BACKUP_TITULO = "Salve seu visual antes da primeira troca"
+AVISO_BACKUP_TEXTO = "Assim você sempre consegue voltar para ele."
+OFICIAL_SOMENTE_LEITURA = "Skin oficial · não pode ser editada"
+
+VAZIO_MINHAS = ("Nenhuma skin salva ainda", "Salve o visual atual ou baixe uma da galeria.")
+VAZIO_GALERIA = ("Nada por aqui", "Tente outra busca ou outro filtro.")
+VAZIO_FAVORITAS = ("Nenhuma favorita", "Toque no coração de uma skin para guardá-la aqui.")
+VAZIO_NUVEM = ("Nada na sua conta", "Em Minhas skins, use ⋯ → Enviar para a conta.")
+
+NUVEM_LOCAL = ("Por enquanto, sua conta e as skins enviadas ficam guardadas neste "
+               "computador. A sincronização online chega numa próxima versão.")
+
+SALVAR = "Salvar visual atual"
+DESFAZER = "Desfazer a última troca"
+
+PREF_APLICAR = [
+    ("papel_de_parede", "Trocar o papel de parede", "Usa o papel de parede da skin."),
+    ("recarregar", "Recarregar o Cinnamon", "O painel muda na hora; a tela pisca por um instante."),
+    ("tela_login", "Aplicar na tela de login", "Pede a senha de administrador."),
+]
+PREF_TEMA = ("Tema do aplicativo", "Automático segue o tema do sistema.")
+APARENCIAS = [("auto", "Automático"), ("clara", "Claro"), ("escura", "Escuro")]

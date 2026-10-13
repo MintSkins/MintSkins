@@ -2,7 +2,7 @@
 set -e
 
 if [ "$1" = "configure" ]; then
-    python3 -m compileall -q -j 0 /usr/lib/mintskin/mintskin >/dev/null 2>&1 || true
+    python3 -m compileall -q -j 0 /usr/lib/mintskins/mintskins >/dev/null 2>&1 || true
 fi
 
 exit 0

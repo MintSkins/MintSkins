@@ -3,7 +3,7 @@ set -e
 
 case "$1" in
     remove|upgrade|deconfigure)
-        find /usr/lib/mintskin -type d -name __pycache__ -prune -exec rm -rf {} + 2>/dev/null || true
+        find /usr/lib/mintskins -type d -name __pycache__ -prune -exec rm -rf {} + 2>/dev/null || true
         ;;
 esac
 
