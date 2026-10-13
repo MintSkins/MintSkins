@@ -1,6 +1,7 @@
 """Atualizacoes pelo GitHub Releases (porta Atualizacoes)."""
 import hashlib
 import json
+import re
 import shutil
 import subprocess
 import urllib.error
@@ -11,10 +12,19 @@ from .. import __version__
 from ..dominio.erros import MintSkinsErro
 from ..dominio.versao import NovaVersao, mais_nova
 
-REPOSITORIO = "PablUoo/MintSkins"
+REPOSITORIO = "MintSkins/MintSkins"
 API = f"https://api.github.com/repos/{REPOSITORIO}"
 ORIGENS_PERMITIDAS = (f"https://github.com/{REPOSITORIO}/releases/download/",
+                      "https://github.com/PablUoo/MintSkins/releases/download/",   # antes da organizacao
                       "https://objects.githubusercontent.com/")
+_PAGINA_RELEASE = re.compile(r"^(https://github\.com/[\w.-]+/[\w.-]+/)releases/")
+
+
+def origem_da_release(pagina):
+    """Se o repositorio mudar de dono ou de nome, o GitHub redireciona a API e a release
+    informa o endereco novo: os pacotes dela podem vir de la."""
+    m = _PAGINA_RELEASE.match(pagina or "")
+    return m.group(1) + "releases/download/" if m else None
 TEMPO = 8
 
 
@@ -60,7 +70,8 @@ class AtualizadorGitHub:
 
     def baixar(self, nova, destino, progresso=None):
         """progresso(baixados, total) a cada bloco; total e 0 se o servidor nao informar."""
-        if not nova.pacote_url or not nova.pacote_url.startswith(ORIGENS_PERMITIDAS):
+        origens = ORIGENS_PERMITIDAS + tuple(o for o in [origem_da_release(nova.pagina)] if o)
+        if not nova.pacote_url or not nova.pacote_url.startswith(origens):
             raise MintSkinsErro("O pacote desta versão ainda não foi publicado. Tente de novo mais tarde.")
         destino = Path(destino)
         destino.mkdir(parents=True, exist_ok=True)

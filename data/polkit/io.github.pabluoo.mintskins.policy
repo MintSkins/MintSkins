@@ -3,7 +3,7 @@
  "http://www.freedesktop.org/standards/PolicyKit/1/policyconfig.dtd">
 <policyconfig>
   <vendor>MintSkins</vendor>
-  <vendor_url>https://github.com/PablUoo/MintSkins</vendor_url>
+  <vendor_url>https://github.com/MintSkins/MintSkins</vendor_url>
   <icon_name>mintskins</icon_name>
   <action id="io.github.pabluoo.mintskins.tela-de-login">
     <description>Change the login screen appearance</description>

@@ -1,7 +1,7 @@
 Format: https://www.debian.org/doc/packaging-manuals/copyright-format/1.0/
 Upstream-Name: MintSkins
-Upstream-Contact: https://github.com/PablUoo/MintSkins
-Source: https://github.com/PablUoo/MintSkins
+Upstream-Contact: https://github.com/MintSkins/MintSkins
+Source: https://github.com/MintSkins/MintSkins
 
 Files: *
 Copyright: 2026 MintSkins

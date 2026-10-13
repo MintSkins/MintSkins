@@ -22,6 +22,6 @@ if command -v gh >/dev/null; then
 else
   echo
   echo "Falta criar a Release no GitHub (sem o gh instalado):"
-  echo "  https://github.com/PablUoo/MintSkins/releases/new?tag=v$VERSAO"
+  echo "  https://github.com/MintSkins/MintSkins/releases/new?tag=v$VERSAO"
   echo "  anexe: $DEB e dist/SHA256SUMS"
 fi

@@ -11,7 +11,7 @@ Provides: mintskin
 Recommends: cinnamon, plank
 Suggests: slick-greeter
 Maintainer: @MANTENEDOR@
-Homepage: https://github.com/PablUoo/MintSkins
+Homepage: https://github.com/MintSkins/MintSkins
 Description: gerenciador de visuais (skins) para o Linux Mint Cinnamon
  O MintSkins guarda o visual do desktop como skins com nome, capa e autor:
  tema, icones, cursor, fontes, painel e applets, extensoes, dock Plank,

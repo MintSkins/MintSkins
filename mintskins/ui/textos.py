@@ -2,7 +2,7 @@
 
 APP = "MintSkins"
 SLOGAN = "Seu Linux Mint com a sua cara."
-URL_PROJETO = "https://github.com/PablUoo/MintSkins"
+URL_PROJETO = "https://github.com/MintSkins/MintSkins"
 PROPRIETARIO = "MintSkins"
 
 SOBRE_NOS = (

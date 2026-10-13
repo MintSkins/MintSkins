@@ -8,7 +8,7 @@
 <p align="center"><strong>Troque o visual do seu Linux Mint Cinnamon com um clique.</strong></p>
 
 <p align="center">
-  <a href="https://github.com/PablUoo/MintSkins/releases"><img src="https://img.shields.io/github/v/release/PablUoo/MintSkins?color=FFC400&label=vers%C3%A3o&labelColor=14151F" alt="Versão"></a>
+  <a href="https://github.com/MintSkins/MintSkins/releases"><img src="https://img.shields.io/github/v/release/MintSkins/MintSkins?color=FFC400&label=vers%C3%A3o&labelColor=14151F" alt="Versão"></a>
   <img src="https://img.shields.io/badge/Linux%20Mint-Cinnamon-FFC400?labelColor=14151F" alt="Linux Mint Cinnamon">
   <img src="https://img.shields.io/badge/Python-3.10%2B-FFC400?labelColor=14151F" alt="Python 3.10+">
   <img src="https://img.shields.io/badge/GTK-3-FFC400?labelColor=14151F" alt="GTK 3">
@@ -58,7 +58,7 @@ autor. Salve quantas quiser, troque entre elas e sempre volte para a anterior.
 ## Instalar
 
 Baixe o `.deb` mais recente em
-[Releases](https://github.com/PablUoo/MintSkins/releases) e instale:
+[Releases](https://github.com/MintSkins/MintSkins/releases) e instale:
 
 ```bash
 sudo apt install ./mintskins_*_all.deb

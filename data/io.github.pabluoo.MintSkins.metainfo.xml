@@ -29,20 +29,20 @@
   </categories>
   <launchable type="desktop-id">io.github.pabluoo.MintSkins.desktop</launchable>
   <icon type="stock">mintskins</icon>
-  <url type="homepage">https://github.com/PablUoo/MintSkins</url>
-  <url type="bugtracker">https://github.com/PablUoo/MintSkins/issues</url>
+  <url type="homepage">https://github.com/MintSkins/MintSkins</url>
+  <url type="bugtracker">https://github.com/MintSkins/MintSkins/issues</url>
   <screenshots>
     <screenshot type="default">
       <caption>Início, com o visual em uso e as skins recentes</caption>
-      <image>https://raw.githubusercontent.com/PablUoo/MintSkins/main/docs/imagens/inicio-escuro.png</image>
+      <image>https://raw.githubusercontent.com/MintSkins/MintSkins/main/docs/imagens/inicio-escuro.png</image>
     </screenshot>
     <screenshot>
       <caption>Galeria de skins</caption>
-      <image>https://raw.githubusercontent.com/PablUoo/MintSkins/main/docs/imagens/galeria.png</image>
+      <image>https://raw.githubusercontent.com/MintSkins/MintSkins/main/docs/imagens/galeria.png</image>
     </screenshot>
     <screenshot>
       <caption>Minhas skins, no tema claro</caption>
-      <image>https://raw.githubusercontent.com/PablUoo/MintSkins/main/docs/imagens/minhas-skins.png</image>
+      <image>https://raw.githubusercontent.com/MintSkins/MintSkins/main/docs/imagens/minhas-skins.png</image>
     </screenshot>
   </screenshots>
   <requires>
