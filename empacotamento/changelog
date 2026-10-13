@@ -1,3 +1,14 @@
+mintskins (1.0.2) stable; urgency=medium
+
+  * O projeto passa a se chamar MintSkins, com o logo novo.
+  * Skins exportadas usam a extensao .mintskins; arquivos .mintskin
+    continuam abrindo.
+  * Os dados de ~/.local/share/mintskin, ~/.config/mintskin e
+    ~/.cache/mintskin sao movidos para as pastas mintskins.
+  * O pacote mintskins substitui o pacote mintskin.
+
+ -- MintSkins <PablUoo@users.noreply.github.com>  Tue, 13 Oct 2026 15:00:00 -0300
+
 mintskins (1.0.1) stable; urgency=medium
 
   * Dock desligado em "Aplicativos de inicializacao" nao conta mais como ativo.

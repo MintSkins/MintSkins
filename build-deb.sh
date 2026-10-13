@@ -33,6 +33,7 @@ install -d "$RAIZ/DEBIAN" "$DOC" "$RAIZ/usr/share/mintskins/skins" "$RAIZ/usr/sh
 (cd mintskins && find . -type f \( -name '*.py' -o -name '*.css' -o -name '*.svg' \) -not -path '*/__pycache__/*' \
   -exec install -D -m 644 {} "$RAIZ/usr/lib/mintskins/mintskins/{}" \;)
 install -D -m 755 bin/mintskins "$RAIZ/usr/bin/mintskins"
+ln -s mintskins "$RAIZ/usr/bin/mintskin"   # nome antigo, para quem ja usava o comando
 install -D -m 755 helpers/mintskins-login-helper "$RAIZ/usr/lib/mintskins/mintskins-login-helper"
 install -D -m 644 data/io.github.pabluoo.MintSkins.desktop "$RAIZ/usr/share/applications/io.github.pabluoo.MintSkins.desktop"
 install -D -m 644 data/io.github.pabluoo.MintSkins.metainfo.xml "$RAIZ/usr/share/metainfo/io.github.pabluoo.MintSkins.metainfo.xml"
