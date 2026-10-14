@@ -49,8 +49,8 @@ autor. Salve quantas quiser, troque entre elas e sempre volte para a anterior.
 - **Skin oficial macOS Tahoe** incluída: barra no topo, dock e menu com a maçã
 - **Galeria** com skins oficiais e da comunidade: veja os detalhes, o perfil do
   autor, baixe e favorite
-- **Conta** para guardar suas skins e publicar na galeria (por enquanto, tudo
-  fica salvo neste computador)
+- **Conta do mintskins.com**: entre com o e-mail (ou @usuario) e a senha do site,
+  envie suas skins (públicas ou privadas) e baixe as da comunidade
 - **Backup obrigatório** antes da primeira troca e **desfazer** a qualquer hora
 - **Atualização automática**: avisa quando sai uma versão nova e instala com um clique
 - Exporte e importe skins (`.mintskins`) para usar em outros computadores

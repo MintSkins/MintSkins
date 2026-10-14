@@ -116,7 +116,7 @@ def resetar_ausentes(arq):
     """Volta ao padrao toda chave da lista que a skin nao define."""
     presentes = {(s, k) for s, k, _ in ler_perfil(arq)}
     for s, k in CHAVES:
-        if (s, k) not in presentes and esquema_existe(s):
+        if (s, k) not in presentes and gsettings.esquema_existe(s):
             gsettings.resetar(s, k)
 
 

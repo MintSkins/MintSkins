@@ -45,8 +45,8 @@ VAZIO_GALERIA = ("Nada por aqui", "Tente outra busca ou outro filtro.")
 VAZIO_FAVORITAS = ("Nenhuma favorita", "Toque no coração de uma skin para guardá-la aqui.")
 VAZIO_NUVEM = ("Nada na sua conta", "Em Minhas skins, use ⋯ → Enviar para a conta.")
 
-NUVEM_LOCAL = ("Por enquanto, sua conta e as skins enviadas ficam guardadas neste "
-               "computador. A sincronização online chega numa próxima versão.")
+NUVEM_LOCAL = ("Sua conta é a mesma do mintskins.com: as skins que você envia ficam lá e "
+               "aparecem na galeria do site e do app.")
 
 SALVAR = "Salvar visual atual"
 DESFAZER = "Desfazer a última troca"

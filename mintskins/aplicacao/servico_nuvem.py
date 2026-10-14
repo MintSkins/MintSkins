@@ -2,7 +2,7 @@
 from typing import Optional
 
 from ..dominio.conta import Perfil
-from ..dominio.erros import LoginNecessario, SemPermissao, SkinNaoEncontrada
+from ..dominio.erros import LoginNecessario, SemConexao, SemPermissao, SkinNaoEncontrada
 from ..dominio.galeria import ID_PERFIL_MINTSKINS, PREFIXO_OFICIAL, ItemGaleria, item_oficial
 from ..dominio.skin import AUTOR_MINTSKINS, Skin
 from .portas import Estado, Nuvem
@@ -10,15 +10,22 @@ from .servico import ServicoSkins
 
 
 class ServicoNuvem:
-    def __init__(self, nuvem: Nuvem, estado: Estado, skins: ServicoSkins):
-        self.nuvem, self.estado, self.skins = nuvem, estado, skins
+    def __init__(self, nuvem: Nuvem, estado: Estado, skins: ServicoSkins, capas=None):
+        self.nuvem, self.estado, self.skins, self.capas = nuvem, estado, skins, capas
+
+    @property
+    def site(self) -> str:
+        return getattr(self.nuvem, "site", "https://mintskins.com")
 
     @property
     def token(self) -> Optional[str]:
         return self.estado.sessao()
 
     def conta(self):
-        conta = self.nuvem.conta(self.token) if self.token else None
+        try:
+            conta = self.nuvem.conta(self.token) if self.token else None
+        except SemConexao:
+            return None                           # sem internet: nao encerra a sessao
         if self.token and not conta:              # sessao expirada ou apagada
             self.estado.definir_sessao(None)
         return conta
@@ -53,8 +60,12 @@ class ServicoNuvem:
         return self.token
 
     def galeria(self, filtro: str = "todas", busca: str = "") -> list[ItemGaleria]:
-        oficiais = [item_oficial(s) for s in self.skins.incluidas()]
-        comunidade = self.nuvem.galeria()
+        incluidas = self.skins.incluidas()
+        oficiais = [item_oficial(s) for s in incluidas]
+        # a conta oficial do site publica as mesmas skins que vem com o app: mostra so a do app
+        ids_incluidas = {s.id for s in incluidas}
+        comunidade = [i for i in self.nuvem.galeria()
+                      if not (i.extras.get("oficial") and i.id in ids_incluidas)]
         itens = {"oficiais": oficiais, "comunidade": comunidade}.get(filtro, oficiais + comunidade)
         itens = self._enriquecer(itens)
         if filtro == "favoritas":
@@ -116,6 +127,8 @@ class ServicoNuvem:
         skin.exigir_editavel("enviada")
         anterior = skin.extras.get("nuvem_id")
         meta = {"nome": skin.nome, "descricao": skin.descricao, "dock": skin.dock}
+        if self.capas:
+            meta["capa"] = str(self.capas.capa(skin))
         try:
             item = self.nuvem.enviar(token, skin.pasta, meta, publica, anterior)
         except (SkinNaoEncontrada, SemPermissao):
@@ -126,5 +139,6 @@ class ServicoNuvem:
     def definir_publica(self, item: ItemGaleria, publica: bool) -> None:
         self.nuvem.definir_publica(self._exigir_login(), item.id, publica)
 
-    def remover(self, item: ItemGaleria) -> None:
-        self.nuvem.remover(self._exigir_login(), item.id)
+    def remover(self, item: ItemGaleria):
+        """Pode devolver a pagina do site para confirmar a exclusao (codigo por e-mail)."""
+        return self.nuvem.remover(self._exigir_login(), item.id)

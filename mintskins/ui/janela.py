@@ -674,16 +674,21 @@ class Janela(Gtk.ApplicationWindow):
 
     def remover_da_conta(self, item):
         if dialogos.confirmar(self, f"Remover “{item.nome}” da conta?",
-                              "Ela sai da sua conta e da galeria. A cópia neste computador continua.",
+                              "Ela sai da sua conta e da galeria. A cópia neste computador continua. "
+                              "Para confirmar, enviamos um código para o seu e-mail e abrimos o site.",
                               "Remover", destrutivo=True):
-            self._rapido("Remover", lambda: self.app.nuvem.remover(item), "Removida da conta.")
+            try:
+                pagina = self.app.nuvem.remover(item)
+            except MintSkinsErro as e:
+                self.avisar(str(e))
+                return
+            if pagina:
+                self.abrir_url(pagina)
+                self.avisar("Digite no site o código que enviamos para o seu e-mail.")
 
     def entrar(self, criar, dados, erro):
         try:
-            if criar:
-                self.app.nuvem.criar_conta(dados.get("nome", ""), dados["email"], dados["senha"])
-            else:
-                self.app.nuvem.entrar(dados["email"], dados["senha"])
+            self.app.nuvem.entrar(dados["email"], dados["senha"])
         except MintSkinsErro as e:
             erro.set_text(str(e))
             erro.show()

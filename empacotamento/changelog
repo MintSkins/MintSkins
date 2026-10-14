@@ -1,3 +1,14 @@
+mintskins (1.0.6) stable; urgency=medium
+
+  * Corrige o erro "name 'esquema_existe' is not defined" ao aplicar uma skin
+    salva da tela, que deixava o visual aplicado pela metade.
+  * Conta, galeria e envio de skins pelo mintskins.com: entrar com e-mail ou
+    @usuario e senha, publicar (ou guardar privada), mandar versao nova,
+    favoritar, baixar e ver perfis.
+  * Criar conta, recuperar a senha e confirmar exclusoes abrem o site.
+
+ -- MintSkins <PablUoo@users.noreply.github.com>  Wed, 14 Oct 2026 17:30:00 -0300
+
 mintskins (1.0.5) stable; urgency=medium
 
   * O projeto agora fica na organizacao MintSkins no GitHub.

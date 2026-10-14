@@ -40,3 +40,7 @@ class DadosInvalidos(MintSkinsErro):
 
 class SemPermissao(MintSkinsErro):
     pass
+
+
+class SemConexao(MintSkinsErro):
+    """O site do MintSkins nao respondeu (sem internet ou fora do ar)."""

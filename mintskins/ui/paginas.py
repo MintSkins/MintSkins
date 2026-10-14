@@ -344,43 +344,42 @@ class Conta(Pagina):
             preencher(g, v, cards)
 
     def _entrar(self):
-        cartao = css(Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=14), "ms-grupo", "ms-grupo-linha")
+        """Entrar com a conta do mintskins.com. Criar conta e recuperar a senha sao no site (codigo por e-mail)."""
+        site = self.j.app.nuvem.site
+        cartao = css(Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=10), "ms-grupo", "ms-grupo-linha")
         cartao.set_halign(Gtk.Align.START)
         cartao.set_size_request(440, -1)
-        formas = Gtk.Stack(transition_type=Gtk.StackTransitionType.CROSSFADE, vhomogeneous=False,
-                           interpolate_size=True)
-        seletor = Gtk.StackSwitcher(stack=formas, halign=Gtk.Align.START)
-        cartao.pack_start(seletor, False, False, 0)
-        formas.add_titled(self._formulario(False), "entrar", "Entrar")
-        formas.add_titled(self._formulario(True), "criar", "Criar conta")
-        cartao.pack_start(formas, False, False, 0)
-        self.caixa.pack_start(cartao, False, False, 0)
-        return []
-
-    def _formulario(self, criar):
-        caixa = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=10, margin_top=6)
+        cartao.pack_start(rotulo("Entrar com a conta do mintskins.com", ["ms-titulo-secao"]), False, False, 0)
         campos = {}
-        for chave, rot, senha in ((("nome", "Nome", False),) if criar else ()) + (
-                ("email", "E-mail", False), ("senha", "Senha", True)):
-            caixa.pack_start(rotulo(rot, ["ms-dim", "ms-pequeno"]), False, False, 0)
+        for chave, rot, senha in (("email", "E-mail ou usuário", False), ("senha", "Senha", True)):
+            cartao.pack_start(rotulo(rot, ["ms-dim", "ms-pequeno"]), False, False, 0)
             e = css(Gtk.Entry(visibility=not senha, activates_default=False), "ms-campo")
             if senha:
                 e.set_input_purpose(Gtk.InputPurpose.PASSWORD)
-                e.set_placeholder_text("pelo menos 8 caracteres" if criar else "")
-            elif chave == "email":
-                e.set_input_purpose(Gtk.InputPurpose.EMAIL)
+            else:
+                e.set_placeholder_text("voce@exemplo.com ou @usuario")
             campos[chave] = e
-            caixa.pack_start(e, False, False, 0)
+            cartao.pack_start(e, False, False, 0)
         erro = rotulo("", ["ms-erro", "ms-pequeno"], wrap=True)
-        caixa.pack_start(erro, False, False, 0)
-        acao = botao("Criar conta" if criar else "Entrar", "ms-primario",
-                     ao_clicar=lambda: self.j.entrar(criar, {k: e.get_text() for k, e in campos.items()}, erro))
-        acao.set_halign(Gtk.Align.START)
+        erro.set_no_show_all(True)
+        cartao.pack_start(erro, False, False, 0)
+        acao = botao("Entrar", "ms-primario",
+                     ao_clicar=lambda: self.j.entrar(False, {k: e.get_text() for k, e in campos.items()}, erro))
         for e in campos.values():
             e.connect("activate", lambda _e: acao.clicked())
-        caixa.pack_start(acao, False, False, 4)
-        erro.set_no_show_all(True)
-        return caixa
+        botoes = Gtk.Box(spacing=8, margin_top=4)
+        botoes.pack_start(acao, False, False, 0)
+        botoes.pack_start(botao("Esqueci a senha", "ms-fantasma",
+                                ao_clicar=lambda: self.j.abrir_url(f"{site}/senha/new")), False, False, 0)
+        cartao.pack_start(botoes, False, False, 0)
+        cartao.pack_start(rotulo("Ainda não tem conta? Crie no site (com e-mail, Google ou GitHub) e depois entre aqui.",
+                                 ["ms-dim", "ms-pequeno"], wrap=True), False, False, 6)
+        criar = botao("Criar conta no mintskins.com", "ms-secundario",
+                      ao_clicar=lambda: self.j.abrir_url(f"{site}/conta/nova"))
+        criar.set_halign(Gtk.Align.START)
+        cartao.pack_start(criar, False, False, 0)
+        self.caixa.pack_start(cartao, False, False, 0)
+        return []
 
     def _logado(self, conta):
         j = self.j

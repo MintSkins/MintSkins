@@ -14,7 +14,7 @@ from .infra.cinnamon import DesktopCinnamon
 from .infra.estado import EstadoArquivo
 from .infra.inicio_automatico import InicioAutomatico
 from .infra.legado import MigradorMacSh
-from .infra.nuvem_local import NuvemLocal
+from .infra.nuvem_site import NuvemSite
 from .infra.repositorio import RepositorioArquivos
 
 
@@ -37,6 +37,14 @@ def nome_do_usuario():
         return os.environ.get("USER", "")
 
 
+def nome_do_computador():
+    """Aparece no site, na lista de onde a conta esta logada."""
+    try:
+        return f"{nome_do_usuario()} em {os.uname().nodename}"[:60]
+    except OSError:
+        return "Linux Mint"
+
+
 def montar():
     caminhos.migrar_pastas_antigas()
     repo = RepositorioArquivos(caminhos.SKINS_USUARIO, caminhos.SKINS_MINTSKINS, caminhos.DESFAZER)
@@ -44,11 +52,12 @@ def montar():
     usuario = nome_do_usuario()
     migrador = MigradorMacSh(repo, estado, usuario, caminhos.MAC_SH_BACKUP, caminhos.MAC_SH_ATIVO)
     skins = ServicoSkins(repo, DesktopCinnamon(), estado, usuario, migrador)
+    capas = GeradorCapas(caminhos.CACHE / "capas")
     return Aplicativo(
         skins=skins,
-        nuvem=ServicoNuvem(NuvemLocal(caminhos.NUVEM_LOCAL), estado, skins),
+        nuvem=ServicoNuvem(NuvemSite(caminhos.CACHE / "site", computador=nome_do_computador()), estado, skins, capas),
         atualizacoes=ServicoAtualizacoes(AtualizadorGitHub(), estado, caminhos.CACHE / "atualizacoes"),
         notificacoes=ServicoNotificacoes(estado),
         inicio_automatico=InicioAutomatico(),
-        capas=GeradorCapas(caminhos.CACHE / "capas"),
+        capas=capas,
     )
