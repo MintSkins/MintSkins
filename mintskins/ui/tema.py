@@ -6,40 +6,47 @@ MARCA = Path(__file__).with_name("marca")
 AMARELO = "#FFC400"
 AMARELO_2 = "#FFD84A"
 AMARELO_3 = "#FFF1A8"
-TINTA = "#14151F"
+TINTA = "#0D0D11"
 
+# mesmas cores do mintskins.com
 CORES = {
     "escura": {
-        "ms_fundo": TINTA,
-        "ms_lateral": "#191A26",
-        "ms_superficie": "#1F2030",
-        "ms_superficie_2": "#2A2B3D",
+        "ms_fundo": "#09090C",
+        "ms_fundo_2": "#0F0F14",
+        "ms_superficie": "#15151C",
+        "ms_superficie_2": "#1C1C25",
+        "ms_superficie_3": "#272733",
         "ms_borda": "rgba(255,255,255,0.08)",
-        "ms_texto": "#F4F4F7",
-        "ms_texto_2": "#A3A5B8",
+        "ms_borda_forte": "rgba(255,255,255,0.16)",
+        "ms_texto": "#F2F2F5",
+        "ms_texto_2": "#A3A3B2",
+        "ms_texto_3": "#6C6C7C",
         "ms_destaque": AMARELO,
         "ms_destaque_hover": AMARELO_2,
         "ms_sobre_destaque": TINTA,
         "ms_destaque_texto": AMARELO,
         "ms_destaque_suave": "rgba(255,196,0,0.14)",
-        "ms_perigo": "#FF6B6B",
-        "ms_sombra": "rgba(0,0,0,0.45)",
+        "ms_perigo": "#FF8A8A",
+        "ms_sombra": "rgba(0,0,0,0.50)",
     },
     "clara": {
-        "ms_fundo": "#F7F6F1",
-        "ms_lateral": "#FFFFFF",
+        "ms_fundo": "#F6F5F1",
+        "ms_fundo_2": "#EEEDE7",
         "ms_superficie": "#FFFFFF",
-        "ms_superficie_2": "#EFEEE7",
-        "ms_borda": "rgba(20,21,31,0.10)",
-        "ms_texto": TINTA,
-        "ms_texto_2": "#5C5E6E",
+        "ms_superficie_2": "#F1F0EA",
+        "ms_superficie_3": "#E3E2DA",
+        "ms_borda": "rgba(13,13,17,0.10)",
+        "ms_borda_forte": "rgba(13,13,17,0.22)",
+        "ms_texto": "#0D0D11",
+        "ms_texto_2": "#4B4B58",
+        "ms_texto_3": "#7A7A88",
         "ms_destaque": AMARELO,
         "ms_destaque_hover": AMARELO_2,
         "ms_sobre_destaque": TINTA,
-        "ms_destaque_texto": "#8A5D00",
+        "ms_destaque_texto": "#9C6F00",
         "ms_destaque_suave": "rgba(255,196,0,0.20)",
-        "ms_perigo": "#C62828",
-        "ms_sombra": "rgba(20,21,31,0.10)",
+        "ms_perigo": "#B42318",
+        "ms_sombra": "rgba(13,13,17,0.10)",
     },
 }
 

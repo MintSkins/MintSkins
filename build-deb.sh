@@ -30,7 +30,7 @@ sh -n empacotamento/postinst && sh -n empacotamento/prerm && sh -n helpers/mints
 passo "Arquivos"
 DOC="$RAIZ/usr/share/doc/$PACOTE"
 install -d "$RAIZ/DEBIAN" "$DOC" "$RAIZ/usr/share/mintskins/skins" "$RAIZ/usr/share/man/man1"
-(cd mintskins && find . -type f \( -name '*.py' -o -name '*.css' -o -name '*.svg' \) -not -path '*/__pycache__/*' \
+(cd mintskins && find . -type f \( -name '*.py' -o -name '*.css' -o -name '*.svg' -o -name '*.ttf' -o -name 'OFL-*.txt' \) -not -path '*/__pycache__/*' \
   -exec install -D -m 644 {} "$RAIZ/usr/lib/mintskins/mintskins/{}" \;)
 install -D -m 755 bin/mintskins "$RAIZ/usr/bin/mintskins"
 ln -s mintskins "$RAIZ/usr/bin/mintskin"   # nome antigo, para quem ja usava o comando

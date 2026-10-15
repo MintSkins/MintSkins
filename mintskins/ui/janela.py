@@ -13,19 +13,20 @@ gi.require_version("Gdk", "3.0")
 from gi.repository import Gdk, GdkPixbuf, Gio, GLib, Gtk  # noqa: E402
 
 from .. import __version__  # noqa: E402
+from ..aplicacao.servico_nuvem import LOCAL, PRIVADA, PUBLICA  # noqa: E402
 from ..dominio.erros import LoginNecessario, MintSkinsErro  # noqa: E402
 from ..dominio.notificacao import ACAO_ATUALIZACAO  # noqa: E402
 from ..dominio.skin import EXTENSAO, EXTENSOES_ACEITAS  # noqa: E402
-from . import dialogos, paginas, tema  # noqa: E402
+from . import paginas, tema  # noqa: E402
 from .atualizacao import PopupAtualizacao  # noqa: E402
 from .editar_perfil import ModalPerfil  # noqa: E402
-from .modal import ModalConfirmacao  # noqa: E402
+from .modal import ModalAtualizar, ModalConfirmacao, ModalEscolha, ModalFormulario  # noqa: E402
 from .notificacoes import Sino  # noqa: E402
 from . import textos as T  # noqa: E402
-from .widgets import Card, Marca, avatar, botao, css, data_br, icone, rotulo  # noqa: E402
+from .widgets import Card, Marca, avatar, botao, css, data_br, rotulo  # noqa: E402
 
-LATERAL = [("inicio", "SKINS"), ("galeria", "SKINS"), ("minhas", "SKINS"),
-           ("conta", "MINTSKINS"), ("preferencias", "MINTSKINS"), ("sobre", "MINTSKINS")]
+TOPO = ["inicio", "galeria", "minhas"]          # abas no topo, como o menu do site
+DETALHES = ("detalhe", "skin")                  # paginas que andam entre as skins de uma lista
 
 
 class Janela(Gtk.ApplicationWindow):
@@ -33,14 +34,16 @@ class Janela(Gtk.ApplicationWindow):
         super().__init__(application=gtk_app, title=T.APP)
         self.app = app
         css(self, "ms-janela")
-        self.set_default_size(1220, 840)
-        self.set_size_request(940, 620)
+        self.set_default_size(1260, 860)
+        self.set_size_request(980, 640)
         self._icone()
         self.ocupado = False
         self.nova_versao = None
         self.ativa = None
         self.conta = None
+        self.na_conta = {}
         self._trilha = []
+        self._lista = []            # skins da lista de onde a pessoa abriu a atual (anterior / proxima)
         self._toast_id = 0
         self._toast_acao = None
         self._variante = None
@@ -56,9 +59,9 @@ class Janela(Gtk.ApplicationWindow):
         self._barra()
         raiz = Gtk.Overlay()
         self.add(raiz)
-        corpo = Gtk.Box()
+        corpo = Gtk.Box(orientation=Gtk.Orientation.VERTICAL)
         raiz.add(corpo)
-        corpo.pack_start(self._lateral(), False, False, 0)
+        corpo.pack_start(self._barra_trilha(), False, False, 0)
         sobre = Gtk.Overlay()
         corpo.pack_start(sobre, True, True, 0)
         self.pilha = Gtk.Stack(transition_type=Gtk.StackTransitionType.CROSSFADE, transition_duration=150)
@@ -68,6 +71,7 @@ class Janela(Gtk.ApplicationWindow):
             "minhas": paginas.Minhas(self), "conta": paginas.Conta(self),
             "preferencias": paginas.Preferencias(self), "sobre": paginas.Sobre(self),
             "detalhe": paginas.Detalhe(self), "perfil": paginas.Perfil(self),
+            "skin": paginas.SkinLocal(self),
         }
         for nome, p in self.paginas.items():
             self.pilha.add_named(p.widget, nome)
@@ -75,12 +79,18 @@ class Janela(Gtk.ApplicationWindow):
         self.popup = PopupAtualizacao(corpo, ao_atualizar=self.atualizar_app, ao_pular=self.ignorar_versao,
                                       ao_reiniciar=self.reiniciar, ao_tentar_de_novo=self.atualizar_app,
                                       ao_fechar=lambda: self._barra_ativa(True))
-        raiz.add_overlay(self.popup)
         self.confirmacao = ModalConfirmacao(corpo, ao_fechar=lambda: self._barra_ativa(True))
-        raiz.add_overlay(self.confirmacao)
-        self.modal_perfil = ModalPerfil(corpo, self._salvar_perfil, ao_fechar=lambda: self._barra_ativa(True))
-        raiz.add_overlay(self.modal_perfil)
+        self.formulario = ModalFormulario(corpo, ao_fechar=lambda: self._barra_ativa(True))
+        self.escolha = ModalEscolha(corpo, ao_fechar=lambda: self._barra_ativa(True))
+        self.modal_atualizar = ModalAtualizar(corpo, ao_fechar=lambda: self._barra_ativa(True))
+        self.modal_perfil = ModalPerfil(corpo, self._salvar_perfil, ao_fechar=lambda: self._barra_ativa(True),
+                                        ao_conta_no_site=self.conta_no_site)
+        self._modais = [self.confirmacao, self.formulario, self.escolha, self.modal_atualizar, self.modal_perfil,
+                        self.popup]
+        for m in self._modais:
+            raiz.add_overlay(m)
         self.connect("key-press-event", self._tecla)
+        self.connect("button-press-event", self._botao_mouse)
         self.connect("delete-event", self._fechando)
 
         self.drag_dest_set(Gtk.DestDefaults.ALL, [], Gdk.DragAction.COPY)
@@ -145,49 +155,148 @@ class Janela(Gtk.ApplicationWindow):
         self._logos.append(m)
         return m
 
+    # ------------------------------------------------------------ barra do topo (como o menu do site)
+
     def _barra(self):
         hb = Gtk.HeaderBar(show_close_button=True)
         self.set_titlebar(hb)
         hb.set_custom_title(Gtk.Box())
         self.set_title(T.APP)
-        self.btn_voltar = botao("", "ms-fantasma", icone_nome="go-previous-symbolic", dica="Voltar",
-                                ao_clicar=self.voltar)
-        hb.pack_start(self.btn_voltar)
-        self.trilha = css(Gtk.Box(spacing=4), "ms-trilha")
-        hb.pack_start(self.trilha)
+        marca = css(Gtk.Button(relief=Gtk.ReliefStyle.NONE, tooltip_text="Início"), "ms-logo")
+        marca.add(self.logo(118))
+        marca.connect("clicked", lambda _b: self.ir_para("inicio"))
+        hb.pack_start(marca)
+
+        self.abas, self.contadores = {}, {}
+        primeira = None
+        for pid in TOPO + [None]:          # a ultima, escondida, fica marcada fora das abas
+            b = Gtk.RadioButton.new_from_widget(primeira)
+            primeira = primeira or b
+            b.set_mode(False)
+            if pid is None:
+                self._aba_nenhuma = b
+                continue
+            caixa = Gtk.Box(spacing=6)
+            caixa.pack_start(rotulo(T.NAV[pid][1].upper(), cortar=False), False, False, 0)
+            if pid == "minhas":
+                self.contadores[pid] = css(Gtk.Label(label="0"), "ms-nav-contador")
+                caixa.pack_start(self.contadores[pid], False, False, 0)
+            b.add(caixa)
+            css(b, "ms-nav")
+            b.connect("toggled", self._aba_clicada, pid)
+            self.abas[pid] = b
+            hb.pack_start(b)
+
+        self.conta_botao = css(Gtk.MenuButton(relief=Gtk.ReliefStyle.NONE, tooltip_text="Sua conta"),
+                               "ms-conta-botao")
+        hb.pack_end(self.conta_botao)
         self.sino = Sino(self.app.notificacoes, self._notificacao_clicada)
         hb.pack_end(self.sino)
         hb.pack_end(botao(T.SALVAR, "ms-primario", icone_nome="list-add-symbolic",
                           dica="Guarda o visual da tela como uma skin sua", ao_clicar=self.salvar_atual))
-        hb.pack_end(botao("Importar", "ms-fantasma", icone_nome="document-open-symbolic",
+        hb.pack_end(botao("", "ms-fantasma", icone_nome="document-open-symbolic",
                           dica="Importar um arquivo .mintskins", ao_clicar=self.importar))
-        self.btn_desfazer = botao("Desfazer", "ms-fantasma", icone_nome="edit-undo-symbolic", dica=T.DESFAZER,
+        self.btn_desfazer = botao("", "ms-fantasma", icone_nome="edit-undo-symbolic", dica=T.DESFAZER,
                                   ao_clicar=self.desfazer)
         self.btn_desfazer.set_no_show_all(True)       # so aparece quando ha uma troca para desfazer
         self.btn_desfazer.get_child().show_all()
         hb.pack_end(self.btn_desfazer)
         self._hb = hb
 
+    def _menu_conta(self):
+        """Botao da conta no canto: avatar + nome, com Conta, Preferencias, Sobre e Sair."""
+        for f in self.conta_botao.get_children():
+            f.destroy()
+        caixa = Gtk.Box(spacing=8)
+        if self.conta:
+            caixa.pack_start(avatar(self.conta, pequeno=True), False, False, 0)
+            caixa.pack_start(rotulo(self.conta.nome.split()[0].upper(), cortar=False), False, False, 0)
+        else:
+            caixa.pack_start(Gtk.Image.new_from_icon_name("avatar-default-symbolic", Gtk.IconSize.BUTTON),
+                             False, False, 4)
+            caixa.pack_start(rotulo("ENTRAR", cortar=False), False, False, 0)
+        caixa.pack_start(Gtk.Image.new_from_icon_name("pan-down-symbolic", Gtk.IconSize.MENU), False, False, 0)
+        self.conta_botao.add(caixa)
+
+        pop = css(Gtk.Popover(), "ms-pop")
+        menu = Gtk.Box(orientation=Gtk.Orientation.VERTICAL)
+        menu.set_size_request(240, -1)
+        if self.conta:
+            cab = css(Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=2), "ms-menu-cab")
+            cab.pack_start(rotulo(self.conta.nome, ["ms-card-nome"]), False, False, 0)
+            cab.pack_start(rotulo(self.conta.email, ["ms-dim", "ms-pequeno"]), False, False, 0)
+            menu.pack_start(cab, False, False, 0)
+            itens = [("Minha conta", lambda: self.ir_para("conta")),
+                     ("Meu perfil", lambda: self.abrir_perfil(self.conta.id)),
+                     ("Editar perfil", self.editar_perfil), None]
+        else:
+            itens = [("Entrar", lambda: self.ir_para("conta")),
+                     ("Criar conta no site", lambda: self.abrir_url(f"{self.app.nuvem.site}/conta/nova")), None]
+        itens += [("Preferências", lambda: self.ir_para("preferencias")), ("Sobre o MintSkins", lambda: self.ir_para("sobre"))]
+        if self.conta:
+            itens += [None, ("Sair da conta", self.sair, True)]
+        for item in itens:
+            if item is None:
+                menu.pack_start(Gtk.Separator(), False, False, 0)
+                continue
+            texto, cb, perigo = (tuple(item) + (False,))[:3]
+            b = Gtk.ModelButton(text=texto)
+            if perigo:
+                css(b, "ms-perigo")
+            b.connect("clicked", lambda _b, cb=cb: (pop.popdown(), GLib.idle_add(cb)))
+            menu.pack_start(b, False, False, 0)
+        menu.show_all()
+        pop.add(menu)
+        self.conta_botao.set_popover(pop)
+        self.conta_botao.show_all()
+
     def _barra_ativa(self, ativa):
-        """Com o popup aberto, os botoes da barra de titulo ficam travados."""
+        """Com um modal aberto, os botoes da barra de titulo ficam travados."""
+        if ativa and any(m.aberto for m in getattr(self, "_modais", [])):
+            return
         for w in self._hb.get_children():
             w.set_sensitive(ativa)
         if ativa:
-            self.btn_voltar.set_sensitive(len(self._trilha) > 1)
             self.btn_desfazer.set_visible(self.app.skins.pode_desfazer())
 
     def _tecla(self, _w, ev):
         if ev.keyval == Gdk.KEY_Escape:
-            for modal in (self.confirmacao, self.modal_perfil, self.popup):
+            for modal in self._modais:
                 if modal.aberto:
                     modal.fechar()
                     return True
+            return False
+        if any(m.aberto for m in self._modais) or isinstance(self.get_focus(), Gtk.Entry):
+            return False
+        alt = ev.state & Gdk.ModifierType.MOD1_MASK
+        if alt and ev.keyval == Gdk.KEY_Left or ev.keyval == Gdk.KEY_BackSpace:
+            self.voltar()
+            return True
+        if self.pilha.get_visible_child_name() in DETALHES and ev.keyval in (Gdk.KEY_Left, Gdk.KEY_Right):
+            self.andar_na_lista(-1 if ev.keyval == Gdk.KEY_Left else 1)
+            return True
+        return False
+
+    def _botao_mouse(self, _w, ev):
+        if ev.button == 8:              # botao "voltar" do mouse
+            self.voltar()
+            return True
         return False
 
     def perguntar(self, titulo, texto, botao_txt, acao, icone_nome="dialog-question-symbolic", destrutivo=False):
         """Confirmacao no meio da janela, com o resto borrado."""
         self._barra_ativa(False)
         self.confirmacao.confirmar(self._variante, titulo, texto, botao_txt, acao, icone_nome, destrutivo)
+
+    def mensagem(self, titulo, texto, icone_nome="dialog-information-symbolic", erro=False):
+        self._barra_ativa(False)
+        self.confirmacao.confirmar(self._variante, titulo, texto, "Entendi", None,
+                                   "dialog-error-symbolic" if erro else icone_nome, destrutivo=erro, so_ok=True)
+
+    def pedir_nome(self, titulo, botao_txt, ao_confirmar, nome="", descricao="", com_capa=False, explicacao=None):
+        self._barra_ativa(False)
+        self.formulario.pedir(self._variante, titulo, botao_txt, ao_confirmar, nome, descricao, com_capa,
+                              explicacao)
 
     def _abrir_popup(self):
         self._barra_ativa(False)
@@ -207,65 +316,41 @@ class Janela(Gtk.ApplicationWindow):
             self.verificar_versao(True)
         return False
 
-    def _lateral(self):
-        lateral = css(Gtk.Box(orientation=Gtk.Orientation.VERTICAL), "ms-lateral")
-        lateral.set_size_request(250, -1)
-        logo = self.logo(170)
-        logo.set_halign(Gtk.Align.START)
-        logo.set_margin_start(22)
-        logo.set_margin_top(20)
-        logo.set_margin_bottom(10)
-        lateral.pack_start(logo, False, False, 0)
+    # ------------------------------------------------------------ trilha: voltar, onde estou, anterior/proxima
 
-        self.nav = Gtk.ListBox(selection_mode=Gtk.SelectionMode.SINGLE)
-        self.nav.set_header_func(self._grupo_nav)
-        self.contadores = {}
-        for pid, grupo in LATERAL:
-            icn, titulo = T.NAV[pid]
-            linha = Gtk.ListBoxRow()
-            linha.pagina, linha.grupo = pid, grupo
-            caixa = Gtk.Box(spacing=12)
-            caixa.pack_start(icone(icn, Gtk.IconSize.BUTTON), False, False, 0)
-            caixa.pack_start(rotulo(titulo), True, True, 0)
-            if pid in ("galeria", "minhas"):
-                self.contadores[pid] = css(Gtk.Label(label="0"), "ms-contador")
-                caixa.pack_end(self.contadores[pid], False, False, 0)
-            linha.add(caixa)
-            self.nav.add(linha)
-        self.nav.connect("row-selected", self._navegou)
-        lateral.pack_start(self.nav, False, False, 0)
+    def _barra_trilha(self):
+        self.revelar_trilha = Gtk.Revealer(transition_type=Gtk.RevealerTransitionType.SLIDE_DOWN,
+                                           transition_duration=150)
+        barra = css(Gtk.Box(spacing=6), "ms-trilha-barra")
+        self.btn_voltar = botao("VOLTAR", "ms-passo", icone_nome="go-previous-symbolic", dica="Voltar (Alt+←)",
+                                ao_clicar=self.voltar)
+        barra.pack_start(self.btn_voltar, False, False, 0)
+        barra.pack_start(css(Gtk.Separator(orientation=Gtk.Orientation.VERTICAL, margin_top=6, margin_bottom=6),
+                             "ms-trilha-separador"), False, False, 6)
+        self.trilha = Gtk.Box(spacing=0)
+        barra.pack_start(self.trilha, True, True, 0)
+        self.navegacao = Gtk.Box(spacing=2)
+        self.btn_anterior = botao("ANTERIOR", "ms-passo", icone_nome="go-previous-symbolic",
+                                  dica="Skin anterior (←)", ao_clicar=lambda: self.andar_na_lista(-1))
+        self.posicao = rotulo("", ["ms-posicao"], cortar=False)
+        self.btn_proxima = botao("PRÓXIMA", "ms-passo", icone_nome="go-next-symbolic", icone_depois=True,
+                                 dica="Próxima skin (→)", ao_clicar=lambda: self.andar_na_lista(1))
+        for w in (self.btn_anterior, self.posicao, self.btn_proxima):
+            self.navegacao.pack_start(w, False, False, 0)
+            w.show_all()
+        self.navegacao.set_no_show_all(True)
+        barra.pack_end(self.navegacao, False, False, 0)
+        self.revelar_trilha.add(barra)
+        return self.revelar_trilha
 
-        self.rodape = Gtk.Box(spacing=10, margin=14)
-        lateral.pack_end(self.rodape, False, False, 0)
-        return lateral
+    def _aba_clicada(self, botao_, pid):
+        if botao_.get_active() and not getattr(self, "_sincronizando", False):
+            self.ir_para(pid)
 
-    def _rodape(self):
-        for f in self.rodape.get_children():
-            f.destroy()
-        b = css(Gtk.Button(relief=Gtk.ReliefStyle.NONE), "ms-fantasma")
-        caixa = Gtk.Box(spacing=10)
-        if self.conta:
-            caixa.pack_start(avatar(self.conta), False, False, 0)
-            caixa.pack_start(rotulo(self.conta.nome, ["ms-card-nome"]), True, True, 0)
-        else:
-            caixa.pack_start(icone("avatar-default-symbolic", Gtk.IconSize.LARGE_TOOLBAR), False, False, 0)
-            caixa.pack_start(rotulo("Entrar", ["ms-card-nome"]), True, True, 0)
-        b.add(caixa)
-        b.connect("clicked", lambda _b: self.ir_para("conta"))
-        self.rodape.pack_start(b, True, True, 0)
-        self.rodape.show_all()
-
-    @staticmethod
-    def _grupo_nav(linha, antes):
-        novo = antes is None or antes.grupo != linha.grupo
-        linha.set_header(rotulo(linha.grupo, ["ms-rotulo-grupo"]) if novo else None)
-
-    def _navegou(self, _lista, linha):
-        if linha is None or getattr(self, "_sincronizando", False):
-            return
+    def ir_para(self, pagina):
         self._trilha = [("inicio", T.NAV["inicio"][1], None)]
-        if linha.pagina != "inicio":
-            self._trilha.append((linha.pagina, T.NAV[linha.pagina][1], None))
+        if pagina != "inicio":
+            self._trilha.append((pagina, T.NAV[pagina][1], None))
         self._mostrar()
 
     def _mostrar(self):
@@ -277,46 +362,53 @@ class Janela(Gtk.ApplicationWindow):
         self.paginas[pagina].widget.get_vadjustment().set_value(0)
         raiz = next((p for p, _r, _f in reversed(self._trilha) if p in T.NAV), "inicio")
         self._sincronizando = True
-        for linha in self.nav.get_children():
-            if linha.pagina == raiz:
-                self.nav.select_row(linha)
+        (self.abas.get(raiz) or self._aba_nenhuma).set_active(True)
         self._sincronizando = False
         self._desenhar_trilha()
 
     def _desenhar_trilha(self):
         for f in self.trilha.get_children():
             f.destroy()
-        for i, (pagina, rotulo_, _f) in enumerate(self._trilha):
+        for i, (_pagina, rotulo_, _f) in enumerate(self._trilha):
             atual = i == len(self._trilha) - 1
-            b = Gtk.Button()
-            caixa = Gtk.Box(spacing=6)
-            if i == 0:
-                caixa.pack_start(Gtk.Image.new_from_icon_name("go-home-symbolic", Gtk.IconSize.BUTTON),
-                                 False, False, 0)
-            texto = rotulo(rotulo_)
-            texto.set_max_width_chars(28)
-            caixa.pack_start(texto, False, False, 0)
-            b.add(caixa)
-            css(b, "ms-passo", *(["ms-passo-atual"] if atual else []))
+            if i:
+                self.trilha.pack_start(rotulo("/", ["ms-trilha-separador"]), False, False, 2)
+            texto = rotulo_ if len(rotulo_) <= 32 else rotulo_[:31].rstrip() + "…"
+            b = botao(texto.upper(), "ms-passo", *(["ms-passo-atual"] if atual else []),
+                      ao_clicar=None if atual else (lambda n=i + 1: self._ir_trilha(n)))
             b.set_tooltip_text(rotulo_)
-            if not atual:
-                b.connect("clicked", lambda _b, n=i + 1: self._ir_trilha(n))
             self.trilha.pack_start(b, False, False, 0)
         self.trilha.show_all()
-        self.btn_voltar.set_sensitive(len(self._trilha) > 1)
+        # nas abas do topo a propria aba ja diz onde se esta; a trilha aparece ao abrir uma skin ou perfil
+        self.revelar_trilha.set_reveal_child(len(self._trilha) > 2 or self._trilha[-1][0] not in T.NAV)
+        self._desenhar_navegacao()
+
+    def _desenhar_navegacao(self):
+        """Anterior / 02 de 07 / Proxima, quando a skin aberta veio de uma lista."""
+        pos = self._posicao_na_lista()
+        mostrar = self.pilha.get_visible_child_name() in DETALHES and pos is not None and len(self._lista) > 1
+        self.navegacao.set_visible(mostrar)
+        if mostrar:
+            self.posicao.set_text(f"{pos + 1:02d} / {len(self._lista):02d}")
+
+    def _posicao_na_lista(self):
+        atual = self.paginas[self.pilha.get_visible_child_name()]
+        chave = getattr(atual, "chave", None)
+        return next((i for i, (k, _o) in enumerate(self._lista) if k == chave), None) if chave else None
+
+    def andar_na_lista(self, direcao):
+        pos = self._posicao_na_lista()
+        if pos is None or len(self._lista) < 2:
+            return
+        _chave, abrir = self._lista[(pos + direcao) % len(self._lista)]
+        abrir(substituir=True)
 
     def _ir_trilha(self, tamanho):
         self._trilha = self._trilha[:tamanho]
         self._mostrar()
 
-    def ir_para(self, pagina):
-        for linha in self.nav.get_children():
-            if linha.pagina == pagina:
-                self.nav.unselect_all()
-                self.nav.select_row(linha)
-
-    def _empilhar(self, pagina, rotulo_, restaurar):
-        if self._trilha and self._trilha[-1][0] == pagina:
+    def _empilhar(self, pagina, rotulo_, restaurar, substituir=False):
+        if self._trilha and self._trilha[-1][0] == pagina or substituir:
             self._trilha.pop()
         self._trilha.append((pagina, rotulo_, restaurar))
         self._mostrar()
@@ -359,24 +451,36 @@ class Janela(Gtk.ApplicationWindow):
     def recarregar(self):
         self.ativa = self.app.skins.ativa()
         self.conta = self.app.nuvem.conta()
-        self.contadores["galeria"].set_text(str(len(self.app.nuvem.galeria())))
+        self.na_conta = {}
+        if self.conta:
+            try:
+                self.na_conta = {i.id: i for i in self.app.nuvem.da_conta()}
+            except MintSkinsErro:
+                pass                          # sem internet: as skins aparecem como so deste computador
         self.contadores["minhas"].set_text(str(len(self.app.skins.do_usuario())))
         self.btn_desfazer.set_visible(self.app.skins.pode_desfazer())
-        self._rodape()
+        self._menu_conta()
         for p in self.paginas.values():
             p.atualizar()
+        self._desenhar_navegacao()
 
-    def card_local(self, skin):
+    def situacao(self, skin):
+        """(LOCAL | PRIVADA | PUBLICA, item da conta ou None)."""
+        return self.app.nuvem.situacao(skin, self.na_conta)
+
+    def card_local(self, skin, lista=None):
         ativa = self.ativa is not None and skin.id == self.ativa.id
         selos = [("Em uso", True)] if ativa else []
-        if skin.extras.get("nuvem_id"):
-            selos.append(("Na conta", False))
+        onde, _item = self.situacao(skin)
+        etiquetas = {PUBLICA: [("Pública", True)], PRIVADA: [("Privada", False)]}.get(onde, [])
+        if self.app.nuvem.pendente(skin):
+            selos.append(("Mudanças não enviadas", False))
         quando = "Atualizada" if skin.foi_atualizada else "Salva"
-        menu = [("Renomear…", lambda: self.renomear(skin))]
+        menu = [("Editar nome e descrição…", lambda: self.renomear(skin))]
         if ativa:
-            menu.append(("Atualizar com a tela", lambda: self.atualizar(skin)))
+            menu.append((f"Atualizar (salvar v{skin.versao + 1})…", lambda: self.atualizar(skin)))
         menu += [("Trocar capa…", lambda: self.trocar_capa(skin)),
-                 ("Enviar para a conta…", lambda: self.enviar(skin)),
+                 ("Publicar ou guardar na conta…", lambda: self.enviar(skin)),
                  None,
                  ("Duplicar…", lambda: self.duplicar(skin)),
                  ("Exportar…", lambda: self.exportar(skin)),
@@ -386,8 +490,10 @@ class Janela(Gtk.ApplicationWindow):
         principal = ("Aplicada", None, "ms-secundario") if ativa else \
             ("Aplicar", lambda: self.aplicar(skin), "ms-primario")
         return Card(self.app.capas.capa(skin), skin.nome, skin.responsavel,
-                    f"{quando} em {data_br(skin.atualizado_em or skin.criado_em)}", selos, principal,
-                    menu=menu, destaque=ativa, dica=skin.descricao)
+                    f"v{skin.versao} · {quando.lower()} {data_br(skin.atualizado_em or skin.criado_em, hora=False)}",
+                    selos, principal,
+                    menu=menu, destaque=ativa, dica=skin.descricao, etiquetas=etiquetas,
+                    ao_abrir=lambda: self.abrir_skin(skin, lista))
 
     def acao_item(self, item):
         if not item.instalada:
@@ -396,7 +502,7 @@ class Janela(Gtk.ApplicationWindow):
             return "Aplicada", None, "ms-secundario"
         return "Aplicar", lambda: self.aplicar(self.app.skins.obter(item.skin_local)), "ms-primario"
 
-    def card_item(self, item, dono=False):
+    def card_item(self, item, dono=False, lista=None):
         em_uso = bool(self.ativa and item.instalada and self.ativa.id == item.skin_local)
         selos = []
         if item.oficial:
@@ -405,19 +511,17 @@ class Janela(Gtk.ApplicationWindow):
             selos.append(("Em uso", True))
         elif item.instalada and not item.oficial:
             selos.append(("Instalada", False))
-        if not item.publica:
-            selos.append(("Privada", False))
-        detalhe = "Padrão do MintSkins" if item.oficial else \
-            f"{item.downloads} download{'' if item.downloads == 1 else 's'} · {data_br(item.publicada_em, hora=False)}"
+        etiquetas = [("Privada", False)] if not item.publica else []
         menu = None
         if dono:
             menu = [("Tornar privada" if item.publica else "Publicar na galeria",
                      lambda: self.tornar_publica(item, not item.publica)),
                     None, ("Remover da conta…", lambda: self.remover_da_conta(item), True)]
-        return Card(self.app.capas.capa(item), item.nome, item.autor_nome, detalhe, selos,
+        numeros_ = [("folder-download-symbolic", item.downloads)] if not item.oficial else []
+        return Card(self.app.capas.capa(item), item.nome, item.autor_nome, "", selos,
                     self.acao_item(item), favorito=(item.favorito, lambda v: self.favoritar(item, v), item.favoritos),
-                    menu=menu, destaque=em_uso, cadeado=item.oficial, dica=item.descricao,
-                    ao_abrir=lambda: self.abrir_detalhe(item),
+                    menu=menu, destaque=em_uso, cadeado=item.oficial, dica=item.descricao, etiquetas=etiquetas,
+                    numeros_=numeros_, ao_abrir=lambda: self.abrir_detalhe(item, lista),
                     ao_autor=lambda: self.abrir_perfil(item.autor_id))
 
     def tarefa(self, titulo, funcao, ao_terminar=None, sucesso=None):
@@ -469,7 +573,7 @@ class Janela(Gtk.ApplicationWindow):
         if isinstance(falha, LoginNecessario):
             self.avisar(str(falha), "Entrar", lambda: self.ir_para("conta"))
         else:
-            dialogos.erro(self, f"{titulo}: não deu certo", str(falha))
+            self.mensagem(f"{titulo}: não deu certo", str(falha), erro=True)
 
     def _rapido(self, titulo, funcao, sucesso=None):
         try:
@@ -543,62 +647,113 @@ class Janela(Gtk.ApplicationWindow):
                     sucesso="Visual anterior restaurado.")
 
     def salvar_atual(self, primeiro_backup=False, depois=None):
-        if primeiro_backup:
-            r = dialogos.pedir_nome(self, "Salve seu visual primeiro", "Salvar", "Meu visual original",
-                                    com_capa=True, explicacao="Antes da primeira troca, guarde o visual "
-                                    "atual como uma skin sua. Assim você sempre pode voltar a ele.")
-        else:
-            r = dialogos.pedir_nome(self, T.SALVAR, "Salvar", com_capa=True)
-        if not r:
+        """Com uma skin sua em uso, pergunta se atualiza ela (nova versao) ou cria outra."""
+        ativa = self.ativa
+        if not primeiro_backup and ativa and ativa.editavel:
+            self._barra_ativa(False)
+            self.escolha.escolher(self._variante, "Salvar o visual da tela", "Você está usando "
+                                  f"“{ativa.nome}”. Quer guardar as mudanças nela ou criar outra skin?", [
+                                      ("atualizar", "view-refresh-symbolic", f"Atualizar “{ativa.nome}”",
+                                       f"Salva por cima e vira a v{ativa.versao + 1}."),
+                                      ("nova", "list-add-symbolic", "Nova skin",
+                                       "Cria outra skin com o visual da tela; a atual não muda."),
+                                  ], lambda c: self.atualizar(ativa) if c == "atualizar" else self._salvar_nova())
             return
-        nome, desc, foto = r
-        self._com_foto(foto, lambda capa: self.tarefa(
-            f"Salvando “{nome}”", lambda prog: self.app.skins.salvar_atual(nome, desc, capa, prog),
-            ao_terminar=lambda _s: depois and GLib.idle_add(depois),
-            sucesso=lambda s: f"“{s.nome}” salva em Minhas skins."))
+        self._salvar_nova(primeiro_backup, depois)
+
+    def _salvar_nova(self, primeiro_backup=False, depois=None):
+        def salvar(nome, desc, foto):
+            self._com_foto(foto, lambda capa: self.tarefa(
+                f"Salvando “{nome}”", lambda prog: self.app.skins.salvar_atual(nome, desc, capa, prog),
+                ao_terminar=lambda _s: depois and GLib.idle_add(depois),
+                sucesso=lambda s: f"“{s.nome}” salva em Minhas skins."))
+        if primeiro_backup:
+            self.pedir_nome("Salve seu visual primeiro", "Salvar", salvar, "Meu visual original", com_capa=True,
+                            explicacao="Antes da primeira troca, guarde o visual atual como uma skin sua. "
+                                       "Assim você sempre pode voltar a ele.")
+        else:
+            self.pedir_nome("Nova skin", "Salvar", salvar, com_capa=True,
+                            explicacao="Guarda tudo o que está na tela agora: tema, ícones, painel, dock e "
+                                       "papel de parede.")
 
     def atualizar(self, skin):
-        if dialogos.confirmar(self, f"Atualizar “{skin.nome}”?",
-                              "A skin passa a guardar o visual que está na tela agora.", "Atualizar"):
-            self._com_foto(True, lambda capa: self.tarefa(
-                f"Atualizando “{skin.nome}”",
-                lambda prog: self.app.skins.atualizar_com_atual(skin, capa, prog),
-                sucesso=f"“{skin.nome}” atualizada."))
+        """Grava a tela por cima da skin (v+1), escolhendo a capa e, se ela esta na conta, enviando junto."""
+        onde, _item = self.situacao(skin)
+        self._barra_ativa(False)
+        self.modal_atualizar.pedir(self._variante, skin, onde != LOCAL,
+                                   lambda capa, enviar: self._atualizar(skin, capa, enviar, onde))
+
+    def _atualizar(self, skin, capa, enviar, onde):
+        nova = skin.versao + 1
+
+        def gravar(arquivo):
+            def rodar(prog):
+                s = self.app.skins.atualizar_com_atual(skin, arquivo, prog)
+                if enviar:
+                    prog("Enviando a versão nova para a conta", 0.9)
+                    self.app.nuvem.enviar(s, onde == PUBLICA)
+                return s
+            self.tarefa(f"Salvando “{skin.nome}” v{nova}", rodar,
+                        sucesso=f"“{skin.nome}” v{nova} salva" + (" e enviada para a conta." if enviar else "."))
+        if capa == "imagem":
+            arquivo = self._escolher_imagem()
+            if arquivo:
+                gravar(arquivo)
+        else:
+            self._com_foto(capa == "tela", gravar)
 
     def renomear(self, skin):
-        r = dialogos.pedir_nome(self, "Renomear", "Salvar", skin.nome, skin.descricao)
-        if r:
-            self._rapido("Renomear", lambda: self.app.skins.editar(skin, r[0], r[1]))
+        self.pedir_nome("Editar nome e descrição", "Salvar", lambda nome, desc, _f: self._rapido(
+            "Editar", lambda: self.app.skins.editar(skin, nome, desc), "Alterações salvas."),
+            skin.nome, skin.descricao)
 
     def duplicar(self, skin):
-        r = dialogos.pedir_nome(self, "Duplicar", "Duplicar", f"{skin.nome} (cópia)", skin.descricao)
-        if r:
-            self.tarefa("Duplicando", lambda _p: self.app.skins.duplicar(skin, r[0], r[1]),
-                        sucesso=lambda s: f"“{s.nome}” criada em Minhas skins.")
+        self.pedir_nome("Duplicar", "Duplicar", lambda nome, desc, _f: self.tarefa(
+            "Duplicando", lambda _p: self.app.skins.duplicar(skin, nome, desc),
+            sucesso=lambda s: f"“{s.nome}” criada em Minhas skins."),
+            f"{skin.nome} (cópia)", skin.descricao)
 
     def excluir(self, skin):
-        if dialogos.confirmar(self, f"Excluir “{skin.nome}”?",
-                              "A skin sai deste computador. O visual da tela não muda.", "Excluir",
-                              destrutivo=True):
-            self._rapido("Excluir", lambda: self.app.skins.excluir(skin), f"“{skin.nome}” excluída.")
+        texto = "A skin sai deste computador. O visual da tela não muda."
+        if self.situacao(skin)[0] != LOCAL:
+            texto += " A cópia na sua conta continua lá."
+        self.perguntar(f"Excluir “{skin.nome}”?", texto, "Excluir",
+                       lambda: self._rapido("Excluir", lambda: self.app.skins.excluir(skin), f"“{skin.nome}” excluída."),
+                       icone_nome="user-trash-symbolic", destrutivo=True)
 
-    def trocar_capa(self, skin):
+    def _escolher_imagem(self):
+        """Abre o seletor de imagem e devolve um PNG temporario (ate 1280 px), ou None."""
         d = Gtk.FileChooserNative(title="Escolha a capa", transient_for=self,
                                   action=Gtk.FileChooserAction.OPEN, accept_label="Usar")
         f = Gtk.FileFilter()
         f.set_name("Imagens")
         f.add_pixbuf_formats()
         d.add_filter(f)
+        tmp = None
         if d.run() == Gtk.ResponseType.ACCEPT:
             try:
                 pix = GdkPixbuf.Pixbuf.new_from_file_at_scale(d.get_filename(), 1280, -1, True)
-                tmp = Path(tempfile.mkstemp(suffix=".png")[1])
+                tmp = Path(tempfile.mkstemp(prefix="mintskins-capa-", suffix=".png")[1])
                 pix.savev(str(tmp), "png", [], [])
-                self._rapido("Trocar capa", lambda: self.app.skins.trocar_capa(skin, tmp))
-                tmp.unlink(missing_ok=True)
             except GLib.Error as e:
-                dialogos.erro(self, "Imagem inválida", str(e))
+                self.mensagem("Imagem inválida", str(e), erro=True)
         d.destroy()
+        return tmp
+
+    def trocar_capa(self, skin):
+        """So a capa muda (a versao continua a mesma). Com a skin em uso, da para usar uma foto da tela."""
+        def usar(arquivo):
+            if arquivo:
+                self._rapido("Trocar capa", lambda: self.app.skins.trocar_capa(skin, arquivo), "Capa trocada.")
+                Path(arquivo).unlink(missing_ok=True)
+        if not (self.ativa and self.ativa.id == skin.id):
+            usar(self._escolher_imagem())
+            return
+        self._barra_ativa(False)
+        self.escolha.escolher(self._variante, "Trocar a capa", f"A nova capa de “{skin.nome}”:", [
+            ("tela", "camera-photo-symbolic", "Foto da tela", "Tira uma foto do desktop agora."),
+            ("imagem", "image-x-generic-symbolic", "Escolher imagem", "Usa uma imagem do seu computador."),
+        ], lambda c: self._com_foto(True, usar) if c == "tela" else usar(self._escolher_imagem()))
 
     def exportar(self, skin):
         d = Gtk.FileChooserNative(title="Exportar", transient_for=self,
@@ -637,8 +792,25 @@ class Janela(Gtk.ApplicationWindow):
                 self.importar_arquivo(p)
                 break
 
-    def abrir_detalhe(self, item):
-        self._empilhar("detalhe", item.nome, lambda: self.paginas["detalhe"].mostrar(item))
+    def _definir_lista(self, lista, tipo):
+        """Guarda a lista de onde a skin foi aberta, para andar com Anterior / Proxima."""
+        if lista is None:
+            return
+        if tipo == "item":
+            self._lista = [(f"item:{i.id}", lambda substituir=False, i=i: self.abrir_detalhe(i, substituir=substituir))
+                           for i in lista]
+        else:
+            self._lista = [(f"skin:{s.id}", lambda substituir=False, s=s: self.abrir_skin(s, substituir=substituir))
+                           for s in lista]
+
+    def abrir_detalhe(self, item, lista=None, substituir=False):
+        self._definir_lista(lista, "item")
+        self._empilhar("detalhe", item.nome, lambda: self.paginas["detalhe"].mostrar(item), substituir)
+
+    def abrir_skin(self, skin, lista=None, substituir=False):
+        """Pagina de uma skin deste computador: aplicar, editar, publicar, atualizar na conta."""
+        self._definir_lista(lista, "skin")
+        self._empilhar("skin", skin.nome, lambda: self.paginas["skin"].mostrar(skin), substituir)
 
     def abrir_perfil(self, autor_id):
         perfil = self.app.nuvem.perfil(autor_id)
@@ -655,28 +827,64 @@ class Janela(Gtk.ApplicationWindow):
                     ao_terminar=lambda s: self.avisar(f"“{s.nome}” está em Minhas skins.", "Aplicar",
                                                       lambda: self.aplicar(s)))
 
+    def _exigir_conta(self, texto):
+        if self.conta:
+            return True
+        self.avisar(texto, "Entrar", lambda: self.ir_para("conta"))
+        return False
+
     def enviar(self, skin):
-        if not self.conta:
-            self.avisar("Entre na sua conta para enviar skins.", "Entrar", lambda: self.ir_para("conta"))
+        """Escolhe onde a skin fica: so na conta (privada) ou publicada na galeria."""
+        if not self._exigir_conta("Entre na sua conta para guardar ou publicar skins."):
             return
-        escolha = dialogos.escolher(self, f"Enviar “{skin.nome}”", [
-            ("privada", "Só para mim", "Fica na sua conta, para baixar em outro computador."),
-            ("publica", "Publicar na galeria", "Qualquer pessoa pode ver, baixar e favoritar."),
-        ], "Enviar")
-        if escolha:
-            publica = escolha == "publica"
-            self.tarefa("Enviando", lambda _p: self.app.nuvem.enviar(skin, publica),
-                        sucesso="Publicada na galeria." if publica else "Guardada na sua conta.")
+        self._barra_ativa(False)
+        self.escolha.escolher(self._variante, f"Onde “{skin.nome}” vai ficar?",
+                              "Você pode mudar isso depois, na página da skin.", [
+                                  (PRIVADA, "changes-prevent-symbolic", "Privada na conta",
+                                   "Só você vê. Baixe em outro computador quando quiser."),
+                                  (PUBLICA, "web-browser-symbolic", "Pública na galeria",
+                                   "Todo mundo vê no app e no site, pode baixar e favoritar."),
+                              ], lambda destino: self.mudar_situacao(skin, destino))
+
+    def mudar_situacao(self, skin, destino):
+        """Leva a skin para LOCAL, PRIVADA ou PUBLICA, fazendo o que precisar (enviar, publicar, remover)."""
+        atual, item = self.situacao(skin)
+        if destino == atual:
+            return
+        if destino != LOCAL and not self._exigir_conta("Entre na sua conta para guardar ou publicar skins."):
+            return
+        if destino == LOCAL:
+            self.remover_da_conta(item)
+        elif atual == LOCAL:
+            publica = destino == PUBLICA
+            self.tarefa(f"Enviando “{skin.nome}”", lambda _p: self.app.nuvem.enviar(skin, publica),
+                        sucesso="Publicada na galeria." if publica else "Guardada na sua conta, só você vê.")
+        else:
+            self.tornar_publica(item, destino == PUBLICA)
+
+    def enviar_atualizacao(self, skin):
+        """Manda a versao deste computador para a conta (vira uma versao nova no site)."""
+        onde, _item = self.situacao(skin)
+        if onde == LOCAL:
+            self.enviar(skin)
+            return
+        self.tarefa(f"Enviando a atualização de “{skin.nome}”",
+                    lambda _p: self.app.nuvem.enviar(skin, onde == PUBLICA),
+                    sucesso="Atualização enviada. O site já mostra a versão nova.")
 
     def tornar_publica(self, item, publica):
-        self._rapido("Alterar", lambda: self.app.nuvem.definir_publica(item, publica),
-                     "Publicada na galeria." if publica else "Agora só você vê esta skin.")
+        if publica:
+            self.perguntar(f"Publicar “{item.nome}”?", "Ela aparece na galeria do app e do site. Qualquer "
+                           "pessoa pode ver, baixar e favoritar.", "Publicar",
+                           lambda: self._rapido("Publicar", lambda: self.app.nuvem.definir_publica(item, True),
+                                                "Publicada na galeria."),
+                           icone_nome="web-browser-symbolic")
+        else:
+            self._rapido("Tornar privada", lambda: self.app.nuvem.definir_publica(item, False),
+                         "Agora só você vê esta skin.")
 
     def remover_da_conta(self, item):
-        if dialogos.confirmar(self, f"Remover “{item.nome}” da conta?",
-                              "Ela sai da sua conta e da galeria. A cópia neste computador continua. "
-                              "Para confirmar, enviamos um código para o seu e-mail e abrimos o site.",
-                              "Remover", destrutivo=True):
+        def remover():
             try:
                 pagina = self.app.nuvem.remover(item)
             except MintSkinsErro as e:
@@ -685,6 +893,14 @@ class Janela(Gtk.ApplicationWindow):
             if pagina:
                 self.abrir_url(pagina)
                 self.avisar("Digite no site o código que enviamos para o seu e-mail.")
+        self.perguntar(f"Tirar “{item.nome}” da conta?",
+                       "Ela sai da sua conta e da galeria. A cópia neste computador continua. "
+                       "Para confirmar, enviamos um código para o seu e-mail e abrimos o site.",
+                       "Tirar da conta", remover, icone_nome="user-trash-symbolic", destrutivo=True)
+
+    def copiar_link(self, url):
+        Gtk.Clipboard.get(Gdk.SELECTION_CLIPBOARD).set_text(url, -1)
+        self.avisar("Link copiado.")
 
     def entrar(self, criar, dados, erro):
         try:
@@ -704,12 +920,10 @@ class Janela(Gtk.ApplicationWindow):
         self.modal_perfil.editar(self._variante, self.conta)
 
     def _salvar_perfil(self, d):
-        """Chamado pelo modal. Devolve o texto do erro, ou None se salvou."""
+        """Chamado pelo modal. Devolve o texto do erro, ou None se salvou. O e-mail nao muda aqui."""
         nuvem = self.app.nuvem
         try:
-            if d["senha_nova"] or d["senha_atual"]:
-                nuvem.alterar_senha(d["senha_atual"], d["senha_nova"])
-            nuvem.atualizar_perfil(d["nome"], d["email"], d["bio"])
+            nuvem.atualizar_perfil(d["nome"], self.conta.email, d["bio"], d["links"])
             if d["foto_nova"]:
                 nuvem.definir_foto(d["foto_nova"])
             elif d["remover_foto"]:
@@ -720,8 +934,15 @@ class Janela(Gtk.ApplicationWindow):
             if d["foto_nova"]:
                 Path(d["foto_nova"]).unlink(missing_ok=True)
         self.recarregar()
-        self.avisar("Perfil atualizado." + (" Senha alterada." if d["senha_nova"] else ""))
+        self.avisar("Perfil atualizado.")
         return None
+
+    def conta_no_site(self):
+        """E-mail, senha, logins sociais, computadores e excluir a conta: tudo pelo site."""
+        self.abrir_url(f"{self.app.nuvem.site}/conta/editar")
+
+    def ver_perfil(self, perfil_ou_conta):
+        self.abrir_url(getattr(perfil_ou_conta, "pagina", "") or f"{self.app.nuvem.site}/u/{perfil_ou_conta.id}")
 
     def sair(self):
         self.app.nuvem.sair()
@@ -828,7 +1049,7 @@ class Janela(Gtk.ApplicationWindow):
         try:
             self.app.inicio_automatico.definir(ativo)
         except OSError as e:
-            dialogos.erro(self, "Iniciar com o sistema", str(e))
+            self.mensagem("Iniciar com o sistema", str(e), erro=True)
 
     def mudar_segundo_plano(self, ativo):
         self.mudar_preferencia("segundo_plano", ativo)

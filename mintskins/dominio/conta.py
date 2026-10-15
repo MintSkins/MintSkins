@@ -19,6 +19,13 @@ class Conta:
     criada_em: Optional[datetime] = None
     bio: str = ""
     foto: Optional[str] = None      # caminho de uma imagem quadrada, ou None (mostra as iniciais)
+    banner: Optional[str] = None    # imagem larga do topo do perfil
+    localizacao: str = ""
+    site: str = ""
+    github: str = ""
+    seguidores: int = 0
+    seguindo: int = 0
+    pagina: str = ""                # endereco do perfil no site
 
     @property
     def iniciais(self) -> str:
@@ -34,6 +41,13 @@ class Perfil:
     itens: list = field(default_factory=list)
     bio: str = ""
     foto: Optional[str] = None
+    banner: Optional[str] = None
+    localizacao: str = ""
+    site: str = ""
+    github: str = ""
+    seguidores: int = 0
+    seguindo: int = 0
+    pagina: str = ""
 
     @property
     def iniciais(self) -> str:

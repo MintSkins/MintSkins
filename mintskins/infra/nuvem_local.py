@@ -104,7 +104,7 @@ class NuvemLocal:
         return Conta(id=cid, nome=c["nome"], email=c["email"], criada_em=_data(c.get("criada_em")),
                      bio=c.get("bio", ""), foto=self._foto(cid))
 
-    def atualizar_perfil(self, token, nome, email, bio):
+    def atualizar_perfil(self, token, nome, email, bio, links=None):
         conta = self._exigir(token)
         nome, email, bio = validar_perfil(nome, email, bio)
         contas = self._ler("contas.json", {})

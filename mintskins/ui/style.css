@@ -1,5 +1,5 @@
-/* MintSkins — identidade visual da marca.
- * As cores (@ms_*) vem de tema.py, em versao clara e escura.
+/* MintSkins — a mesma identidade do mintskins.com.
+ * As cores (@ms_*) vem de tema.py, em versao clara e escura; as fontes (Archivo) de fontes.py.
  * O app tem cara propria: nao muda de cor quando a skin do desktop muda. */
 
 /* ------------------------------------------------------------ base */
@@ -10,13 +10,25 @@
   color: @ms_texto;
 }
 
+.ms-janela,
+.ms-janela label,
+.ms-janela entry,
+.ms-janela button,
+popover.ms-pop,
+popover.ms-pop label,
+popover.ms-notificacoes,
+popover.ms-notificacoes label {
+  font-family: "MintSkins Texto", "Archivo", sans-serif;
+}
+
 .ms-janela headerbar {
   background-image: none;
   background-color: @ms_fundo;
   color: @ms_texto;
   border-bottom: 1px solid @ms_borda;
   box-shadow: none;
-  min-height: 46px;
+  min-height: 56px;
+  padding: 0 8px 0 16px;
 }
 
 .ms-janela headerbar .title {
@@ -24,98 +36,185 @@
   font-weight: 700;
 }
 
-.ms-janela headerbar .subtitle {
+.ms-janela headerbar button.titlebutton {
   color: @ms_texto_2;
 }
 
-/* ------------------------------------------------------------ barra lateral */
-.ms-lateral {
-  background-color: @ms_lateral;
-  border-right: 1px solid @ms_borda;
-}
-
-.ms-lateral list {
+/* ------------------------------------------------------------ navegacao no topo (como o site) */
+.ms-janela button.ms-nav {
+  background-image: none;
   background-color: transparent;
+  border: none;
+  border-radius: 0;
+  box-shadow: none;
+  padding: 0 12px;
+  min-height: 54px;
+  border-bottom: 2px solid transparent;
 }
 
-.ms-lateral row {
-  border-radius: 10px;
-  padding: 9px 12px;
-  margin: 2px 10px;
+.ms-janela button.ms-nav label {
   color: @ms_texto_2;
-  background-color: transparent;
-  transition: background-color 120ms ease-out;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 2px;
 }
 
-.ms-lateral row:hover {
-  background-color: @ms_superficie_2;
+.ms-janela button.ms-nav:hover label {
   color: @ms_texto;
 }
 
-.ms-lateral row:selected,
-.ms-lateral row:selected:hover {
-  background-color: @ms_destaque_suave;
+.ms-janela button.ms-nav:checked {
+  border-bottom-color: @ms_destaque;
+}
+
+.ms-janela button.ms-nav:checked label {
   color: @ms_texto;
 }
 
-.ms-lateral row:selected image {
-  color: @ms_destaque_texto;
-}
-
-.ms-lateral row label {
-  font-weight: 600;
-}
-
-.ms-contador {
-  background-color: @ms_superficie_2;
-  color: @ms_texto_2;
-  border-radius: 999px;
-  padding: 1px 8px;
+.ms-nav-contador {
+  color: @ms_texto_3;
   font-size: 11px;
   font-weight: 700;
 }
 
-.ms-rotulo-grupo {
-  color: @ms_texto_2;
-  font-size: 11px;
-  font-weight: 800;
-  letter-spacing: 1px;
-  margin: 14px 22px 4px 22px;
+.ms-janela button.ms-logo {
+  background: none;
+  border: none;
+  box-shadow: none;
+  padding: 0 10px 0 0;
 }
 
-.ms-rodape-lateral {
+.ms-janela button.ms-conta-botao {
+  background-image: none;
+  background-color: transparent;
+  border: 1px solid @ms_borda;
+  border-radius: 999px;
+  box-shadow: none;
+  padding: 2px 10px 2px 2px;
+}
+
+.ms-janela button.ms-conta-botao:hover,
+.ms-janela button.ms-conta-botao:checked {
+  border-color: @ms_borda_forte;
+  background-color: @ms_superficie_2;
+}
+
+.ms-janela button.ms-conta-botao label {
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 1.5px;
+  color: @ms_texto;
+}
+
+/* ------------------------------------------------------------ trilha (voltar + onde estou + anterior/proxima) */
+.ms-trilha-barra {
+  background-color: @ms_fundo_2;
+  border-bottom: 1px solid @ms_borda;
+  padding: 6px 16px;
+}
+
+.ms-janela button.ms-passo {
+  background-image: none;
+  background-color: transparent;
+  border: none;
+  border-radius: 6px;
+  box-shadow: none;
+  padding: 4px 8px;
+  min-height: 24px;
+}
+
+.ms-janela button.ms-passo label,
+.ms-janela button.ms-passo image {
+  color: @ms_texto_3;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 1.6px;
+}
+
+.ms-janela button.ms-passo:hover label,
+.ms-janela button.ms-passo:hover image {
+  color: @ms_texto;
+}
+
+.ms-janela button.ms-passo-atual label {
+  color: @ms_texto;
+}
+
+.ms-trilha-separador {
+  color: @ms_texto_3;
+  font-size: 11px;
+}
+
+.ms-posicao {
   color: @ms_texto_2;
   font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 1.6px;
+  margin: 0 6px;
 }
 
 /* ------------------------------------------------------------ tipografia */
-.ms-titulo-pagina {
-  font-size: 26px;
-  font-weight: 800;
+.ms-janela label.ms-display {
+  font-family: "MintSkins Display", "MintSkins Texto", sans-serif;
   color: @ms_texto;
 }
 
-.ms-titulo-hero {
-  font-size: 28px;
-  font-weight: 800;
-  color: @ms_texto;
-}
+.ms-display-xl { font-size: 64px; }
+.ms-display-l { font-size: 48px; }
+.ms-display-m { font-size: 36px; }
+.ms-display-s { font-size: 26px; }
+.ms-display-xs { font-size: 20px; }
 
-.ms-titulo-secao {
-  font-size: 17px;
-  font-weight: 800;
-  color: @ms_texto;
+.ms-display-destaque {
+  color: @ms_destaque_texto;
 }
 
 .ms-sobrelinha {
   font-size: 11px;
-  font-weight: 800;
-  letter-spacing: 1.2px;
+  font-weight: 700;
+  letter-spacing: 2px;
   color: @ms_destaque_texto;
+}
+
+.ms-traco {
+  background-color: @ms_destaque_texto;
+  min-width: 24px;
+  min-height: 2px;
+}
+
+.ms-rotulo-tecnico {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 2px;
+  color: @ms_texto_3;
+}
+
+.ms-janela label.ms-titulo-secao {
+  font-family: "MintSkins Display", "MintSkins Texto", sans-serif;
+  font-size: 26px;
+  color: @ms_texto;
+}
+
+.ms-titulo-cartao {
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 2px;
+  color: @ms_texto;
+}
+
+.ms-janela label.ms-titulo-pagina,
+.ms-janela label.ms-titulo-hero {
+  font-family: "MintSkins Display", "MintSkins Texto", sans-serif;
+  font-size: 36px;
+  color: @ms_texto;
 }
 
 .ms-dim {
   color: @ms_texto_2;
+}
+
+.ms-apagado {
+  color: @ms_texto_3;
 }
 
 .ms-pequeno {
@@ -131,74 +230,133 @@
   color: @ms_destaque_texto;
 }
 
-/* ------------------------------------------------------------ superficies */
-.ms-hero,
-.ms-card,
-.ms-grupo,
-.ms-tile {
-  background-color: @ms_superficie;
-  border: 1px solid @ms_borda;
-  box-shadow: 0 2px 10px @ms_sombra;
-}
-
-.ms-hero {
-  border-radius: 20px;
-  padding: 20px;
-}
-
-.ms-card {
-  border-radius: 16px;
-  transition: all 150ms ease-out;
-}
-
-.ms-card:hover,
-.ms-tile:hover {
-  border-color: alpha(@ms_destaque, 0.7);
-  box-shadow: 0 8px 26px @ms_sombra;
-}
-
-.ms-card.ms-ativa {
-  border: 2px solid @ms_destaque;
-}
-
 .ms-card-nome {
   font-size: 15px;
   font-weight: 700;
   color: @ms_texto;
 }
 
-.ms-tile {
-  border-radius: 16px;
-  padding: 18px;
-}
-
-.ms-tile-numero {
-  font-size: 30px;
-  font-weight: 800;
+.ms-sobre-texto {
+  font-size: 14px;
   color: @ms_texto;
 }
 
-.ms-grupo {
-  border-radius: 14px;
+.ms-legal {
+  font-size: 11px;
+  color: @ms_texto_3;
+}
+
+/* ------------------------------------------------------------ superficies */
+.ms-hero,
+.ms-grupo,
+.ms-tile,
+.ms-painel {
+  background-color: @ms_superficie;
+  border: 1px solid @ms_borda;
+  border-radius: 8px;
+}
+
+.ms-hero {
+  padding: 20px;
+}
+
+.ms-painel {
+  padding: 22px 24px;
+}
+
+.ms-tile {
+  padding: 18px;
+}
+
+.ms-janela label.ms-tile-numero {
+  font-family: "MintSkins Display", "MintSkins Texto", sans-serif;
+  font-size: 30px;
+  color: @ms_texto;
 }
 
 .ms-grupo-linha {
   padding: 14px 18px;
 }
 
-.ms-grupo separator {
+.ms-grupo separator,
+.ms-painel separator {
   background-color: @ms_borda;
   min-height: 1px;
 }
 
-/* ------------------------------------------------------------ selos */
+/* numeros lado a lado (downloads, favoritos, versao) */
+.ms-numeros {
+  border: 1px solid @ms_borda;
+  border-radius: 8px;
+}
+
+.ms-numero {
+  padding: 14px 18px;
+  border-right: 1px solid @ms_borda;
+}
+
+.ms-numero.ms-ultimo {
+  border-right: none;
+}
+
+.ms-janela label.ms-numero-valor {
+  font-family: "MintSkins Display", "MintSkins Texto", sans-serif;
+  font-size: 30px;
+  color: @ms_texto;
+}
+
+/* ------------------------------------------------------------ cards de skin */
+.ms-card {
+  background-color: transparent;
+  border: none;
+}
+
+.ms-card-capa {
+  border: 1px solid @ms_borda;
+  border-radius: 8px;
+}
+
+.ms-card:hover .ms-card-capa {
+  border-color: @ms_borda_forte;
+}
+
+.ms-card.ms-ativa .ms-card-capa {
+  border: 2px solid @ms_destaque;
+}
+
+.ms-janela button.ms-capa-botao,
+.ms-janela button.ms-capa-botao:hover,
+.ms-janela button.ms-capa-botao:active {
+  background: none;
+  border: none;
+  box-shadow: none;
+  padding: 0;
+  outline: none;
+}
+
+.ms-card-numeros {
+  color: @ms_texto_3;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.ms-card-numeros image {
+  color: @ms_texto_3;
+}
+
+/* ------------------------------------------------------------ selos (como as etiquetas do site) */
 .ms-badge {
-  background-color: alpha(black, 0.6);
+  background-color: alpha(black, 0.72);
   color: white;
-  border-radius: 999px;
-  padding: 3px 10px;
-  font-size: 11px;
-  font-weight: 700;
+  border-radius: 4px;
+  padding: 3px 8px;
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 1.4px;
+}
+
+.ms-badge image {
+  color: white;
 }
 
 .ms-badge.ms-destaque {
@@ -206,22 +364,58 @@
   color: @ms_sobre_destaque;
 }
 
-/* ------------------------------------------------------------ botoes */
+.ms-etiqueta {
+  background-color: transparent;
+  border: 1px solid @ms_borda_forte;
+  color: @ms_texto_2;
+  border-radius: 4px;
+  padding: 3px 8px;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 1.4px;
+}
+
+.ms-etiqueta.ms-publica {
+  border-color: alpha(@ms_destaque, 0.6);
+  color: @ms_destaque_texto;
+}
+
+/* ------------------------------------------------------------ botoes (retos, caixa alta, como o site) */
 .ms-janela button.ms-primario,
 .ms-janela button.ms-secundario,
-.ms-janela button.ms-fantasma {
+.ms-janela button.ms-contorno,
+.ms-janela button.ms-fantasma,
+.ms-janela button.ms-perigo,
+popover.ms-pop button.ms-primario,
+popover.ms-pop button.ms-secundario {
   background-image: none;
   box-shadow: none;
   text-shadow: none;
-  border-radius: 999px;
-  padding: 6px 18px;
-  font-weight: 700;
+  border-radius: 6px;
+  padding: 8px 16px;
   min-height: 24px;
+  transition: all 120ms ease-out;
+}
+
+.ms-janela button.ms-primario label,
+.ms-janela button.ms-secundario label,
+.ms-janela button.ms-contorno label,
+.ms-janela button.ms-perigo label {
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 1.5px;
+}
+
+.ms-janela button.ms-grande {
+  padding: 13px 22px;
+}
+
+.ms-janela button.ms-grande label {
+  font-size: 13px;
 }
 
 .ms-janela button.ms-primario {
   background-color: @ms_destaque;
-  color: @ms_sobre_destaque;
   border: 1px solid @ms_destaque;
 }
 
@@ -237,32 +431,69 @@
 
 .ms-janela button.ms-secundario {
   background-color: @ms_superficie_2;
-  color: @ms_texto;
   border: 1px solid @ms_borda;
 }
 
 .ms-janela button.ms-secundario:hover {
-  border-color: alpha(@ms_destaque, 0.7);
+  background-color: @ms_superficie_3;
+}
+
+.ms-janela button.ms-contorno {
+  background-color: transparent;
+  border: 1px solid @ms_borda_forte;
+}
+
+.ms-janela button.ms-contorno:hover {
+  border-color: @ms_texto_2;
+  background-color: alpha(@ms_texto, 0.04);
 }
 
 .ms-janela button.ms-secundario label,
-.ms-janela button.ms-secundario image {
+.ms-janela button.ms-secundario image,
+.ms-janela button.ms-contorno label,
+.ms-janela button.ms-contorno image {
   color: @ms_texto;
 }
 
 .ms-janela button.ms-fantasma {
   background-color: transparent;
   border: 1px solid transparent;
-  color: @ms_texto;
   padding: 6px 10px;
+}
+
+.ms-janela button.ms-fantasma label,
+.ms-janela button.ms-fantasma image {
+  color: @ms_texto_2;
 }
 
 .ms-janela button.ms-fantasma:hover {
   background-color: @ms_superficie_2;
 }
 
-.ms-janela button.ms-fantasma image {
+.ms-janela button.ms-fantasma:hover label,
+.ms-janela button.ms-fantasma:hover image {
   color: @ms_texto;
+}
+
+.ms-janela button.ms-perigo {
+  background-color: transparent;
+  border: 1px solid alpha(@ms_perigo, 0.5);
+}
+
+.ms-janela button.ms-perigo:hover {
+  background-color: alpha(@ms_perigo, 0.10);
+}
+
+.ms-janela button.ms-perigo label,
+.ms-janela button.ms-perigo image,
+.ms-perigo,
+.ms-perigo label {
+  color: @ms_perigo;
+}
+
+.ms-janela button.ms-icone-quadrado {
+  padding: 8px;
+  min-width: 24px;
 }
 
 .ms-janela button:disabled,
@@ -275,103 +506,148 @@
   outline-offset: 2px;
 }
 
-.ms-perigo,
-.ms-perigo label {
-  color: @ms_perigo;
+.ms-janela button.ms-link {
+  background: none;
+  border: none;
+  box-shadow: none;
+  padding: 0;
+  min-height: 0;
+}
+
+.ms-janela button.ms-link:hover label {
+  color: @ms_destaque_texto;
+}
+
+.ms-janela button.ms-favorito-ativo image,
+.ms-janela button.ms-favorito-ativo label {
+  color: @ms_destaque_texto;
+}
+
+/* ------------------------------------------------------------ escolha em cartoes (onde fica a skin) */
+.ms-janela button.ms-opcao {
+  background-image: none;
+  background-color: @ms_superficie;
+  border: 1px solid @ms_borda;
+  border-radius: 8px;
+  box-shadow: none;
+  padding: 16px;
+}
+
+.ms-janela button.ms-opcao:hover {
+  border-color: @ms_borda_forte;
+  background-color: @ms_superficie_2;
+}
+
+.ms-janela button.ms-opcao.ms-escolhida {
+  border: 2px solid @ms_destaque;
+  background-color: @ms_destaque_suave;
+}
+
+.ms-opcao-icone {
+  color: @ms_texto_2;
+}
+
+.ms-escolhida .ms-opcao-icone {
+  color: @ms_destaque_texto;
+}
+
+.ms-janela button.ms-opcao:disabled {
+  opacity: 0.5;
 }
 
 /* ------------------------------------------------------------ campos */
-.ms-janela entry.ms-busca {
+.ms-janela entry.ms-busca,
+.ms-janela entry.ms-campo {
   background-image: none;
   background-color: @ms_superficie;
   color: @ms_texto;
   border: 1px solid @ms_borda;
-  border-radius: 999px;
+  border-radius: 6px;
   box-shadow: none;
-  padding: 4px 12px;
-  min-height: 30px;
+  padding: 6px 12px;
+  min-height: 32px;
+  caret-color: @ms_destaque_texto;
 }
 
-.ms-janela entry.ms-busca:focus {
+.ms-janela entry.ms-busca:focus,
+.ms-janela entry.ms-campo:focus {
   border-color: @ms_destaque;
 }
 
 .ms-janela entry.ms-busca image {
+  color: @ms_texto_3;
+}
+
+.ms-janela scrolledwindow.ms-texto-caixa {
+  background-color: @ms_superficie;
+  border: 1px solid @ms_borda;
+  border-radius: 6px;
+}
+
+.ms-janela textview.ms-texto,
+.ms-janela textview.ms-texto text {
+  background-color: @ms_superficie;
+  color: @ms_texto;
+  caret-color: @ms_destaque_texto;
+  font-size: 14px;
+}
+
+.ms-rotulo-campo {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 1.6px;
   color: @ms_texto_2;
 }
 
-/* ------------------------------------------------------------ avisos e estados */
-.ms-aviso {
-  background-color: @ms_destaque_suave;
-  border: 1px solid alpha(@ms_destaque, 0.6);
-  border-radius: 16px;
-  padding: 16px 20px;
+.ms-janela button.ms-chip {
+  background-image: none;
+  background-color: transparent;
+  border: 1px solid @ms_borda;
+  border-radius: 6px;
+  box-shadow: none;
+  padding: 5px 12px;
 }
 
-.ms-aviso-icone {
+.ms-janela button.ms-chip label {
+  color: @ms_texto_2;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 1.4px;
+}
+
+.ms-janela button.ms-chip:hover {
+  border-color: @ms_borda_forte;
+}
+
+.ms-janela button.ms-chip:checked {
+  background-color: @ms_destaque_suave;
+  border-color: alpha(@ms_destaque, 0.7);
+}
+
+.ms-janela button.ms-chip:checked label {
   color: @ms_destaque_texto;
 }
 
-.ms-vazio-card {
-  border: 2px dashed @ms_borda;
-  border-radius: 16px;
-  padding: 36px;
-}
-
-.ms-flutuante {
+.ms-janela combobox button,
+.ms-janela combobox button:backdrop {
+  background-image: none;
   background-color: @ms_superficie;
   color: @ms_texto;
   border: 1px solid @ms_borda;
-  border-radius: 14px;
-  padding: 12px 18px;
-  margin: 18px;
-  box-shadow: 0 10px 30px @ms_sombra;
+  border-radius: 6px;
+  box-shadow: none;
+  padding: 4px 12px;
 }
 
-.ms-flutuante progressbar trough {
-  background-color: @ms_superficie_2;
-  min-height: 6px;
-  border-radius: 999px;
-}
-
-.ms-flutuante progressbar progress {
-  background-color: @ms_destaque;
-  min-height: 6px;
-  border-radius: 999px;
-}
-
-.ms-menu modelbutton {
-  padding: 6px 12px;
-}
-
-.ms-sobre-texto {
-  font-size: 14px;
+.ms-janela combobox button label,
+.ms-janela combobox button arrow {
   color: @ms_texto;
-}
-
-.ms-legal {
-  font-size: 11px;
-  color: @ms_texto_2;
-}
-
-/* ------------------------------------------------------------ ajustes de contraste
- * O tema GTK do sistema muda com cada skin; aqui o MintSkins garante as suas cores. */
-.ms-lateral row:selected label,
-.ms-lateral row:selected:backdrop label {
-  color: @ms_texto;
-}
-
-.ms-janela button.ms-primario:backdrop,
-.ms-janela button.ms-primario:backdrop label,
-.ms-janela button.ms-primario:backdrop image {
-  background-color: @ms_destaque;
-  color: @ms_sobre_destaque;
-  opacity: 0.9;
+  -gtk-icon-source: -gtk-icontheme("pan-down-symbolic");
 }
 
 .ms-janela switch {
   background-image: none;
-  background-color: @ms_superficie_2;
+  background-color: @ms_superficie_3;
   border: 1px solid @ms_borda;
   border-radius: 999px;
   box-shadow: none;
@@ -395,52 +671,93 @@
   margin: 1px;
 }
 
-.ms-janela combobox button,
-.ms-janela combobox button:backdrop {
-  background-image: none;
+.ms-janela checkbutton label {
+  color: @ms_texto;
+}
+
+/* ------------------------------------------------------------ avisos e estados */
+.ms-aviso {
+  background-color: @ms_destaque_suave;
+  border: 1px solid alpha(@ms_destaque, 0.5);
+  border-radius: 8px;
+  padding: 16px 20px;
+}
+
+.ms-aviso-icone {
+  color: @ms_destaque_texto;
+}
+
+.ms-vazio-card {
+  border: 1px dashed @ms_borda_forte;
+  border-radius: 8px;
+  padding: 36px;
+}
+
+.ms-ok {
+  color: @ms_destaque_texto;
+  font-weight: 700;
+}
+
+.ms-flutuante {
+  background-color: @ms_superficie;
+  color: @ms_texto;
+  border: 1px solid @ms_borda_forte;
+  border-radius: 8px;
+  padding: 12px 18px;
+  margin: 18px;
+  box-shadow: 0 10px 30px @ms_sombra;
+}
+
+.ms-flutuante progressbar trough {
+  background-color: @ms_superficie_3;
+  min-height: 4px;
+  border-radius: 0;
+}
+
+.ms-flutuante progressbar progress {
+  background-color: @ms_destaque;
+  min-height: 4px;
+  border-radius: 0;
+}
+
+popover.ms-pop {
+  background-color: @ms_superficie;
+  color: @ms_texto;
+  border: 1px solid @ms_borda_forte;
+  border-radius: 8px;
+  box-shadow: 0 14px 40px @ms_sombra;
+  padding: 6px;
+}
+
+popover.ms-pop modelbutton {
+  padding: 8px 14px;
+  border-radius: 6px;
+  color: @ms_texto;
+}
+
+popover.ms-pop modelbutton:hover {
   background-color: @ms_superficie_2;
-  color: @ms_texto;
-  border: 1px solid @ms_borda;
-  border-radius: 999px;
-  box-shadow: none;
-  padding: 4px 14px;
 }
 
-.ms-janela combobox button label,
-.ms-janela combobox button arrow {
-  color: @ms_texto;
-  -gtk-icon-source: -gtk-icontheme("pan-down-symbolic");
+popover.ms-pop separator {
+  background-color: @ms_borda;
+  margin: 4px 0;
 }
 
-.ms-janela entry.ms-busca,
-.ms-janela entry.ms-busca:backdrop {
-  caret-color: @ms_destaque_texto;
+popover.ms-pop .ms-perigo {
+  color: @ms_perigo;
+}
+
+.ms-menu-cab {
+  padding: 8px 14px 10px 14px;
 }
 
 .ms-janela tooltip,
 tooltip.background {
-  border-radius: 8px;
+  border-radius: 6px;
 }
 
-/* ------------------------------------------------------------ galeria e conta */
-.ms-janela button.ms-link {
-  background: none;
-  border: none;
-  box-shadow: none;
-  padding: 0;
-  min-height: 0;
-}
-
-.ms-janela button.ms-link:hover label {
-  color: @ms_destaque_texto;
-  text-decoration-line: underline;
-}
-
-.ms-janela button.ms-favorito-ativo image,
-.ms-janela button.ms-favorito-ativo label {
-  color: @ms_destaque_texto;
-}
-
+/* ------------------------------------------------------------ avatar */
 .ms-avatar {
   background-color: @ms_destaque;
   color: @ms_sobre_destaque;
@@ -451,124 +768,110 @@ tooltip.background {
   font-size: 14px;
 }
 
+.ms-avatar-pequeno {
+  min-width: 28px;
+  min-height: 28px;
+  font-size: 11px;
+}
+
 .ms-avatar-grande {
   min-width: 72px;
   min-height: 72px;
   font-size: 26px;
 }
 
-.ms-janela button.ms-chip {
-  background-image: none;
-  background-color: @ms_superficie;
-  color: @ms_texto;
-  border: 1px solid @ms_borda;
-  border-radius: 999px;
-  box-shadow: none;
-  padding: 4px 14px;
-  font-weight: 600;
-}
-
-.ms-janela button.ms-chip label {
-  color: @ms_texto;
-}
-
-.ms-janela button.ms-chip:checked {
-  background-color: @ms_destaque;
-  border-color: @ms_destaque;
-}
-
-.ms-janela button.ms-chip:checked label {
-  color: @ms_sobre_destaque;
-}
-
-.ms-janela entry.ms-campo {
-  background-image: none;
-  background-color: @ms_superficie;
-  color: @ms_texto;
-  border: 1px solid @ms_borda;
+/* ------------------------------------------------------------ vitrine da tela inicial (sempre escura, como no site) */
+.ms-vitrine {
+  background-color: #09090C;
   border-radius: 10px;
-  box-shadow: none;
-  padding: 6px 12px;
-  min-height: 34px;
 }
 
-.ms-janela entry.ms-campo:focus {
-  border-color: @ms_destaque;
+.ms-vitrine label,
+.ms-janela .ms-vitrine label.ms-display {
+  color: #F2F2F5;
 }
 
-.ms-erro {
-  color: @ms_perigo;
-  font-weight: 600;
+.ms-vitrine .ms-rotulo-tecnico {
+  color: #A3A3B2;
 }
 
-.ms-janela stackswitcher button {
-  background-image: none;
-  background-color: @ms_superficie_2;
-  color: @ms_texto;
-  border: 1px solid @ms_borda;
-  box-shadow: none;
-  padding: 4px 18px;
+.ms-vitrine .ms-sobrelinha {
+  color: #FFC400;
 }
 
-.ms-janela stackswitcher button label {
-  color: @ms_texto;
+.ms-vitrine .ms-dim {
+  color: #C9C9D4;
 }
 
-.ms-janela stackswitcher button:checked {
-  background-color: @ms_destaque;
+.ms-vitrine-lista {
+  background-color: rgba(9, 9, 12, 0.55);
+  border: 1px solid rgba(255, 255, 255, 0.10);
+  border-radius: 8px;
+  padding: 6px;
 }
 
-.ms-janela stackswitcher button:checked label {
-  color: @ms_sobre_destaque;
-}
-
-/* ------------------------------------------------------------ trilha de navegação */
-.ms-janela button.ms-passo {
+.ms-vitrine button.ms-vitrine-item {
   background-image: none;
   background-color: transparent;
-  border: 1px solid transparent;
-  border-radius: 8px;
+  border: none;
+  border-radius: 6px;
   box-shadow: none;
-  padding: 3px 10px;
-  min-height: 24px;
+  padding: 8px 8px 0 8px;
 }
 
-.ms-janela button.ms-passo label,
-.ms-janela button.ms-passo image {
-  color: @ms_texto_2;
-  font-weight: 600;
+.ms-vitrine button.ms-vitrine-item:hover {
+  background-color: rgba(255, 255, 255, 0.06);
 }
 
-.ms-janela button.ms-passo:hover {
-  background-color: @ms_superficie_2;
+.ms-vitrine button.ms-vitrine-item.ms-ativo {
+  background-color: rgba(255, 255, 255, 0.10);
 }
 
-.ms-janela button.ms-passo:hover label,
-.ms-janela button.ms-passo:hover image {
-  color: @ms_texto;
+.ms-vitrine-item label {
+  color: #A3A3B2;
 }
 
-.ms-janela button.ms-passo-atual,
-.ms-janela button.ms-passo-atual:hover {
-  background-color: @ms_superficie_2;
-  border-color: @ms_borda;
+.ms-vitrine-item.ms-ativo label,
+.ms-vitrine-item:hover label {
+  color: #F2F2F5;
 }
 
-.ms-janela button.ms-passo-atual label,
-.ms-janela button.ms-passo-atual image {
-  color: @ms_texto;
-  font-weight: 800;
+.ms-vitrine-item progressbar trough {
+  background-color: transparent;
+  min-height: 2px;
+  border: none;
+  border-radius: 0;
 }
 
-/* ------------------------------------------------------------ popup de atualizacao */
+.ms-vitrine-item progressbar progress {
+  background-color: #FFC400;
+  min-height: 2px;
+  border: none;
+  border-radius: 0;
+}
+
+.ms-vitrine button.ms-contorno {
+  border-color: rgba(255, 255, 255, 0.28);
+}
+
+.ms-vitrine button.ms-contorno label,
+.ms-vitrine button.ms-contorno image {
+  color: #F2F2F5;
+}
+
+.ms-vitrine button.ms-contorno:hover {
+  background-color: rgba(255, 255, 255, 0.08);
+}
+
+/* ------------------------------------------------------------ popup / modais */
 .ms-popup {
   background-color: @ms_superficie;
   color: @ms_texto;
-  border: 1px solid @ms_borda;
-  border-radius: 22px;
+  border: 1px solid @ms_borda_forte;
+  border-radius: 10px;
   padding: 28px 30px 24px 30px;
   margin: 24px;
-  box-shadow: 0 24px 70px rgba(0,0,0,0.35), 0 2px 8px @ms_sombra;
+  box-shadow: 0 24px 70px rgba(0,0,0,0.40), 0 2px 8px @ms_sombra;
 }
 
 .ms-popup-titulo {
@@ -579,7 +882,7 @@ tooltip.background {
 
 .ms-popup-rolagem {
   background-color: @ms_superficie_2;
-  border-radius: 14px;
+  border-radius: 6px;
 }
 
 .ms-popup-rolagem > viewport {
@@ -593,15 +896,32 @@ tooltip.background {
 }
 
 .ms-popup progressbar trough {
-  background-color: @ms_superficie_2;
-  min-height: 8px;
-  border-radius: 999px;
+  background-color: @ms_superficie_3;
+  min-height: 6px;
+  border-radius: 0;
 }
 
 .ms-popup progressbar progress {
   background-color: @ms_destaque;
-  min-height: 8px;
-  border-radius: 999px;
+  min-height: 6px;
+  border-radius: 0;
+}
+
+.ms-popup-icone {
+  background-color: @ms_destaque_suave;
+  color: @ms_destaque_texto;
+  border-radius: 8px;
+  min-width: 48px;
+  min-height: 48px;
+}
+
+.ms-popup-icone.ms-perigo {
+  background-color: alpha(@ms_perigo, 0.12);
+}
+
+.ms-janela expander title label {
+  color: @ms_texto_2;
+  font-weight: 700;
 }
 
 /* ------------------------------------------------------------ sino de notificacoes */
@@ -610,7 +930,7 @@ tooltip.background {
   background-color: transparent;
   border: 1px solid transparent;
   box-shadow: none;
-  border-radius: 999px;
+  border-radius: 6px;
   padding: 0 2px;
   color: @ms_texto;
 }
@@ -634,8 +954,8 @@ tooltip.background {
 popover.ms-notificacoes {
   background-color: @ms_superficie;
   color: @ms_texto;
-  border: 1px solid @ms_borda;
-  border-radius: 16px;
+  border: 1px solid @ms_borda_forte;
+  border-radius: 8px;
   padding: 0;
   box-shadow: 0 14px 40px @ms_sombra;
 }
@@ -678,7 +998,7 @@ popover.ms-notificacoes separator {
 
 .ms-notificacao-icone {
   background-color: @ms_superficie_2;
-  border-radius: 999px;
+  border-radius: 6px;
   min-width: 34px;
   min-height: 34px;
   color: @ms_texto_2;
@@ -700,10 +1020,15 @@ popover.ms-notificacoes separator {
   min-height: 8px;
 }
 
-.ms-popup-icone {
-  background-color: @ms_destaque_suave;
-  color: @ms_destaque_texto;
-  border-radius: 999px;
-  min-width: 48px;
-  min-height: 48px;
+/* ------------------------------------------------------------ ajustes de contraste
+ * O tema GTK do sistema muda com cada skin; aqui o MintSkins garante as suas cores. */
+.ms-janela button.ms-primario:backdrop,
+.ms-janela button.ms-primario:backdrop label,
+.ms-janela button.ms-primario:backdrop image {
+  background-color: @ms_destaque;
+  color: @ms_sobre_destaque;
+}
+
+.ms-janela scrollbar slider {
+  background-color: @ms_superficie_3;
 }

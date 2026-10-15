@@ -34,8 +34,18 @@ autor. Salve quantas quiser, troque entre elas e sempre volte para a anterior.
   </tr>
   <tr>
     <td align="center">
+      <img src="docs/imagens/skin.png" alt="Página de uma skin sua"><br>
+      <sub><b>Sua skin</b> · versões, pública ou privada</sub>
+    </td>
+    <td align="center">
+      <img src="docs/imagens/detalhe.png" alt="Skin da galeria"><br>
+      <sub><b>Skin da galeria</b> · anterior e próxima</sub>
+    </td>
+  </tr>
+  <tr>
+    <td align="center">
       <img src="docs/imagens/minhas-skins.png" alt="Minhas skins"><br>
-      <sub><b>Minhas skins</b> · aplicar, renomear, enviar</sub>
+      <sub><b>Minhas skins</b> · filtros por onde a skin está</sub>
     </td>
     <td align="center">
       <img src="docs/imagens/sobre.png" alt="Sobre o MintSkins"><br>
@@ -46,11 +56,18 @@ autor. Salve quantas quiser, troque entre elas e sempre volte para a anterior.
 
 ## Recursos
 
+- **Mesma cara do mintskins.com**: menu no topo, vitrine de destaques, títulos
+  grandes e botões iguais aos do site, nos temas claro e escuro
 - **Skin oficial macOS Tahoe** incluída: barra no topo, dock e menu com a maçã
+- **Versões**: mudou algo no desktop? Salve na skin em uso e ela vira a v2, v3…
+  Escolha a capa (foto da tela, imagem sua ou a mesma) e envie junto para a conta
+- **Página de cada skin**: deixe só no computador, privada na conta ou pública
+  na galeria, e veja se há mudanças ainda não enviadas
 - **Galeria** com skins oficiais e da comunidade: veja os detalhes, o perfil do
   autor, baixe e favorite
 - **Conta do mintskins.com**: entre com o e-mail (ou @usuario) e a senha do site,
-  envie suas skins (públicas ou privadas) e baixe as da comunidade
+  envie suas skins (públicas ou privadas), baixe as da comunidade e edite seu
+  perfil (e-mail e senha mudam pelo site)
 - **Backup obrigatório** antes da primeira troca e **desfazer** a qualquer hora
 - **Atualização automática**: avisa quando sai uma versão nova e instala com um clique
 - Exporte e importe skins (`.mintskins`) para usar em outros computadores
@@ -71,12 +88,14 @@ instala o resto, inclusive o dock Plank.
 
 | Quero… | Onde |
 |---|---|
-| Guardar o visual atual | **Salvar visual atual**, no topo |
+| Guardar o visual atual | **Salvar visual**, no topo |
+| Guardar mudanças na skin em uso (nova versão) | **Salvar visual** → **Atualizar**, ou **Salvar alterações** na página da skin |
 | Trocar de visual | **Aplicar** no card da skin |
 | Voltar ao visual anterior | seta ↶ no topo, ou **Desfazer** no aviso |
 | Baixar skins | **Galeria** → **Baixar** |
 | Ver quem fez uma skin | clique no nome do autor |
-| Guardar ou publicar uma skin minha | **Minhas skins** → ⋯ → **Enviar para a conta** |
+| Guardar ou publicar uma skin minha | **Minhas skins** → abra a skin → **Onde esta skin fica** |
+| Andar entre as skins | **Anterior** / **Próxima** no topo da skin, ou ← → |
 | Favoritar | estrela no card (precisa entrar na conta) |
 | Trocar papel de parede, tela de login, tema do app | **Preferências** |
 

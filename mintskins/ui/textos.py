@@ -24,16 +24,28 @@ NAV = {
     "sobre": ("help-about-symbolic", "Sobre"),
 }
 
-GALERIA = ("Galeria", "Skins oficiais e da comunidade. Baixe, aplique e favorite.")
-MINHAS = ("Minhas skins", "Os visuais salvos neste computador.")
-CONTA = ("Conta", "Guarde suas skins na sua conta e publique na galeria.")
-PREFERENCIAS = ("Preferências", None)
-SOBRE = ("Sobre", None)
+# (sobrelinha, titulo, frase) do topo de cada pagina
+GALERIA = ("Galeria", "Explore skins", "Oficiais e da comunidade. Baixe, aplique e favorite as que você curtir.")
+MINHAS = ("Neste computador", "Minhas skins", "Os visuais salvos aqui. Abra uma para aplicar, editar, publicar "
+          "ou deixar privada.")
+PREFERENCIAS = ("Ajustes", "Preferências", None)
 
 FILTROS = [("todas", "Todas"), ("oficiais", "Oficiais"), ("comunidade", "Comunidade"),
            ("favoritas", "Favoritas")]
+ORDENS = [("populares", "Populares"), ("recentes", "Mais recentes"), ("favoritadas", "Mais favoritadas")]
+FILTROS_MINHAS = [("todas", "Todas"), ("publica", "Públicas"), ("privada", "Privadas"),
+                  ("local", "Só neste computador")]
 
-EM_USO = "EM USO AGORA"
+# onde uma skin sua fica: (chave, icone, titulo, explicacao)
+ONDE = [
+    ("local", "computer-symbolic", "Só neste computador", "Ninguém mais vê. Fica só aqui."),
+    ("privada", "changes-prevent-symbolic", "Privada na conta",
+     "Só você vê. Baixe em outro computador quando quiser."),
+    ("publica", "web-browser-symbolic", "Pública na galeria",
+     "Todo mundo vê no app e no site, pode baixar e favoritar."),
+]
+
+EM_USO = "Em uso agora"
 SEM_BACKUP_TITULO = "Visual sem backup"
 SEM_BACKUP_TEXTO = "Este visual ainda não foi salvo. Salve para poder voltar a ele."
 AVISO_BACKUP_TITULO = "Salve seu visual antes da primeira troca"
@@ -43,12 +55,12 @@ OFICIAL_SOMENTE_LEITURA = "Skin oficial · não pode ser editada"
 VAZIO_MINHAS = ("Nenhuma skin salva ainda", "Salve o visual atual ou baixe uma da galeria.")
 VAZIO_GALERIA = ("Nada por aqui", "Tente outra busca ou outro filtro.")
 VAZIO_FAVORITAS = ("Nenhuma favorita", "Toque no coração de uma skin para guardá-la aqui.")
-VAZIO_NUVEM = ("Nada na sua conta", "Em Minhas skins, use ⋯ → Enviar para a conta.")
+VAZIO_NUVEM = ("Nada na sua conta", "Abra uma skin em Minhas skins e escolha onde ela fica.")
 
 NUVEM_LOCAL = ("Sua conta é a mesma do mintskins.com: as skins que você envia ficam lá e "
                "aparecem na galeria do site e do app.")
 
-SALVAR = "Salvar visual atual"
+SALVAR = "Salvar visual"
 DESFAZER = "Desfazer a última troca"
 
 PREF_APLICAR = [

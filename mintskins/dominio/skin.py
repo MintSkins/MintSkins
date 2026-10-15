@@ -49,6 +49,14 @@ class Skin:
         return AUTOR_MINTSKINS if self.incluida else (self.autor or "Você")
 
     @property
+    def versao(self) -> int:
+        """Numero da versao neste computador: 1 ao salvar, +1 a cada atualizacao."""
+        try:
+            return max(1, int(self.extras.get("versao", 1)))
+        except (TypeError, ValueError):
+            return 1
+
+    @property
     def foi_atualizada(self) -> bool:
         return bool(self.atualizado_em and self.criado_em and self.atualizado_em != self.criado_em)
 

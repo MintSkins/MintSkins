@@ -4,6 +4,9 @@ import traceback
 
 import gi
 
+from . import fontes
+
+fontes.registrar()  # antes do primeiro texto na tela
 gi.require_version("Gtk", "3.0")
 gi.require_version("Gdk", "3.0")
 from gi.repository import Gio, GLib, Gtk  # noqa: E402

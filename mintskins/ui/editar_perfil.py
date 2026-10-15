@@ -1,4 +1,4 @@
-"""Modal "Editar perfil": foto, nome, e-mail, bio e senha."""
+"""Modal "Editar perfil": foto, nome, bio e links. E-mail e senha so mudam pelo site."""
 import tempfile
 from pathlib import Path
 
@@ -25,11 +25,11 @@ def foto_quadrada(caminho):
 
 
 class ModalPerfil(ModalBorrado):
-    def __init__(self, alvo, ao_salvar, ao_fechar=None):
+    def __init__(self, alvo, ao_salvar, ao_fechar=None, ao_conta_no_site=None):
         """ao_salvar(dados) devolve None se deu certo ou o texto do erro."""
-        super().__init__(alvo, ao_fechar, largura=500)
-        self.ao_salvar = ao_salvar
-        self.conteudo = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=16)
+        super().__init__(alvo, ao_fechar, largura=540)
+        self.ao_salvar, self.ao_conta_no_site = ao_salvar, ao_conta_no_site
+        self.conteudo = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=14)
         self.cartao.pack_start(self.conteudo, False, False, 0)
 
     def editar(self, variante, conta):
@@ -39,43 +39,55 @@ class ModalPerfil(ModalBorrado):
         self.foto_nova, self.remover_foto = None, False
         c = self.conteudo
         c.pack_start(rotulo("Editar perfil", ["ms-popup-titulo"]), False, False, 0)
+        c.pack_start(rotulo("É o que aparece no seu perfil público, no app e no site.", ["ms-dim"], wrap=True),
+                     False, False, 0)
 
         linha_foto = Gtk.Box(spacing=16)
         self.caixa_avatar = Gtk.Box()
         linha_foto.pack_start(self.caixa_avatar, False, False, 0)
         botoes_foto = Gtk.Box(spacing=8, valign=Gtk.Align.CENTER)
-        botoes_foto.pack_start(botao("Trocar foto…", "ms-secundario", ao_clicar=self._escolher_foto),
-                               False, False, 0)
+        botoes_foto.pack_start(botao("Trocar foto", "ms-contorno", ao_clicar=self._escolher_foto), False, False, 0)
         self.btn_remover = botao("Remover", "ms-fantasma", ao_clicar=self._tirar_foto)
         botoes_foto.pack_start(self.btn_remover, False, False, 0)
         linha_foto.pack_start(botoes_foto, False, False, 0)
         c.pack_start(linha_foto, False, False, 0)
 
         self.nome = self._campo(c, "Nome", conta.nome, max_len=60)
-        self.email = self._campo(c, "E-mail", conta.email)
-        self.email.set_input_purpose(Gtk.InputPurpose.EMAIL)
         self.bio = self._campo(c, "Bio", conta.bio, max_len=BIO_MAXIMA,
                                dica="Uma frase sobre você, aparece no seu perfil público")
-        self.contador = rotulo("", ["ms-dim", "ms-pequeno"], xalign=1.0)
+        self.contador = rotulo("", ["ms-apagado", "ms-pequeno"], xalign=1.0)
         c.pack_start(self.contador, False, False, 0)
         self.bio.connect("changed", lambda e: self.contador.set_text(f"{len(e.get_text())}/{BIO_MAXIMA}"))
         self.bio.emit("changed")
+        lado = Gtk.Box(spacing=12, homogeneous=True)
+        col1, col2 = (Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=6) for _ in range(2))
+        self.localizacao = self._campo(col1, "Localização", conta.localizacao, max_len=60, dica="Ex.: Londrina, PR")
+        self.github = self._campo(col2, "GitHub", conta.github, max_len=39, dica="seu-usuario")
+        lado.pack_start(col1, True, True, 0)
+        lado.pack_start(col2, True, True, 0)
+        c.pack_start(lado, False, False, 0)
+        self.site = self._campo(c, "Site", conta.site, max_len=120, dica="https://")
 
-        senha = Gtk.Expander(label="Alterar senha")
-        css(senha, "ms-expansor")
-        caixa_senha = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=8, margin_top=10)
-        self.senha_atual = self._campo(caixa_senha, "Senha atual", "", senha=True)
-        self.senha_nova = self._campo(caixa_senha, "Nova senha", "", senha=True, dica="pelo menos 8 caracteres")
-        self.senha_conf = self._campo(caixa_senha, "Repita a nova senha", "", senha=True)
-        senha.add(caixa_senha)
-        c.pack_start(senha, False, False, 0)
+        # e-mail e senha: so pelo site, que confirma com um codigo
+        conta_site = css(Gtk.Box(spacing=12), "ms-aviso")
+        textos = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=2, valign=Gtk.Align.CENTER)
+        textos.pack_start(rotulo(conta.email, ["ms-card-nome"]), False, False, 0)
+        textos.pack_start(rotulo("E-mail, senha e login com Google ou GitHub você troca no site.",
+                                 ["ms-dim", "ms-pequeno"], wrap=True), False, False, 0)
+        conta_site.pack_start(textos, True, True, 0)
+        if self.ao_conta_no_site:
+            b = botao("Abrir no site", "ms-contorno", icone_nome="web-browser-symbolic",
+                      ao_clicar=self.ao_conta_no_site)
+            b.set_valign(Gtk.Align.CENTER)
+            conta_site.pack_end(b, False, False, 0)
+        c.pack_start(conta_site, False, False, 0)
 
         self.erro = rotulo("", ["ms-erro", "ms-pequeno"], wrap=True)
         c.pack_start(self.erro, False, False, 0)
         botoes = Gtk.Box(spacing=8)
         self.btn_salvar = botao("Salvar", "ms-primario", ao_clicar=self._salvar)
         botoes.pack_end(self.btn_salvar, False, False, 0)
-        botoes.pack_end(botao("Cancelar", "ms-secundario", ao_clicar=self.fechar), False, False, 0)
+        botoes.pack_end(botao("Cancelar", "ms-contorno", ao_clicar=self.fechar), False, False, 0)
         c.pack_start(botoes, False, False, 0)
 
         self._mostrar_avatar()
@@ -86,7 +98,7 @@ class ModalPerfil(ModalBorrado):
         self.nome.grab_focus()
 
     def _campo(self, caixa, titulo, valor, senha=False, max_len=0, dica=""):
-        caixa.pack_start(rotulo(titulo, ["ms-dim", "ms-pequeno"]), False, False, 0)
+        caixa.pack_start(rotulo(titulo.upper(), ["ms-rotulo-campo"]), False, False, 0)
         e = css(Gtk.Entry(text=valor or "", visibility=not senha, max_length=max_len), "ms-campo")
         if senha:
             e.set_input_purpose(Gtk.InputPurpose.PASSWORD)
@@ -130,13 +142,10 @@ class ModalPerfil(ModalBorrado):
         self.erro.show()
 
     def _salvar(self):
-        dados = {"nome": self.nome.get_text(), "email": self.email.get_text(), "bio": self.bio.get_text(),
+        dados = {"nome": self.nome.get_text(), "bio": self.bio.get_text(),
                  "foto_nova": self.foto_nova, "remover_foto": self.remover_foto,
-                 "senha_atual": self.senha_atual.get_text(), "senha_nova": self.senha_nova.get_text()}
-        if dados["senha_nova"] or dados["senha_atual"]:
-            if dados["senha_nova"] != self.senha_conf.get_text():
-                self._mostrar_erro("A nova senha e a repetição não são iguais.")
-                return
+                 "links": {"localizacao": self.localizacao.get_text().strip(), "site": self.site.get_text().strip(),
+                           "github": self.github.get_text().strip()}}
         erro = self.ao_salvar(dados)
         if erro:
             self._mostrar_erro(erro)

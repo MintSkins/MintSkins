@@ -185,15 +185,26 @@ class NuvemSite:
         except (OSError, ValueError):
             return None
 
+    def _extras_do_perfil(self, d):
+        """Banner, links e seguidores (o site manda desde a API com perfil completo; antes, ficam vazios)."""
+        return {"banner": self._imagem(d.get("banner"), "banners", d["usuario"]),
+                "localizacao": d.get("localizacao") or "", "site": d.get("site") or "",
+                "github": d.get("github") or "", "seguidores": d.get("seguidores") or 0,
+                "seguindo": d.get("seguindo") or 0, "pagina": d.get("perfil") or f"{self.site}/u/{d['usuario']}"}
+
     def _conta(self, d):
         return Conta(id=d["usuario"], nome=d["nome"], email=d.get("email", ""), criada_em=_data(d.get("criada_em")),
-                     bio=d.get("bio") or "", foto=self._imagem(d.get("foto"), "fotos", d["usuario"]))
+                     bio=d.get("bio") or "", foto=self._imagem(d.get("foto"), "fotos", d["usuario"]),
+                     **self._extras_do_perfil(d))
 
-    def atualizar_perfil(self, token, nome, email, bio):
+    def atualizar_perfil(self, token, nome, email, bio, links=None):
+        """O e-mail so muda pelo site (pede um codigo enviado para ele)."""
         atual = self._conta_guardada() or {}
         if email and email.strip().lower() != atual.get("email", "").lower():
             raise DadosInvalidos(f"Para trocar o e-mail, use o site (pede um código): {self.site}/conta/editar")
-        return self._conta(self._pedir("PATCH", "eu", token, campos={"nome": nome, "bio": bio}))
+        campos = {"nome": nome, "bio": bio}
+        campos.update({k: v for k, v in (links or {}).items() if k in ("localizacao", "site", "github")})
+        return self._conta(self._pedir("PATCH", "eu", token, campos=campos))
 
     def definir_foto(self, token, imagem_png):
         if imagem_png:
@@ -222,7 +233,8 @@ class NuvemSite:
                            favoritos=d.get("favoritos", 0), tamanho=d.get("tamanho", 0),
                            pasta=pasta if capa else None,
                            extras={"oficial": bool(d.get("oficial")), "pagina": d.get("pagina"),
-                                   "download": d.get("download"), "versao": d.get("versao")})
+                                   "download": d.get("download"), "versao": d.get("versao"),
+                                   "tags": d.get("tags") or [], "atualizada_em": _data(d.get("atualizada_em"))})
 
     def galeria(self):
         quando, itens = self._galeria
@@ -304,7 +316,7 @@ class NuvemSite:
             return None
         return Perfil(id=d["usuario"], nome=d["nome"], desde=_data(d.get("desde")), oficial=bool(d.get("oficial")),
                       itens=[self._item(s) for s in d.get("skins", [])], bio=d.get("bio") or "",
-                      foto=self._imagem(d.get("foto"), "fotos", d["usuario"]))
+                      foto=self._imagem(d.get("foto"), "fotos", d["usuario"]), **self._extras_do_perfil(d))
 
     @staticmethod
     def _slug(item_id):

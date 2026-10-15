@@ -18,6 +18,11 @@ def _agora():
     return datetime.now().replace(microsecond=0)
 
 
+def _marcar_mudanca(skin):
+    """Quando a skin mudou pela ultima vez (a conta compara com o ultimo envio)."""
+    skin.extras["mudou_em"] = _agora().isoformat()
+
+
 @dataclass
 class Resultado:
     skin: Optional[Skin]
@@ -150,19 +155,26 @@ class ServicoSkins:
 
     def atualizar_com_atual(self, skin: Skin, capa: Optional[Path] = None,
                             progresso: Progresso = _nada) -> Skin:
+        """Grava o visual da tela por cima da skin, como uma versao nova (v2, v3...).
+        capa: imagem nova (foto da tela ou enviada); None mantem a capa atual."""
         skin.exigir_editavel("atualizada")
         self.desktop.verificar()
         skin.atualizado_em = _agora()
+        skin.extras["versao"] = skin.versao + 1
+        _marcar_mudanca(skin)
         return self.repo.gravar(skin, self._capturar_em(skin, progresso), capa)
 
     def editar(self, skin: Skin, nome: str, descricao: str) -> Skin:
         skin.exigir_editavel("renomeada")
         skin.nome, skin.descricao = nome.strip(), descricao.strip()
+        _marcar_mudanca(skin)
         return self.repo.gravar(skin)
 
     def trocar_capa(self, skin: Skin, imagem_png: Path) -> None:
         skin.exigir_editavel("ter a capa trocada")
         self.repo.definir_capa(skin, imagem_png)
+        _marcar_mudanca(skin)
+        self.repo.gravar(skin)
 
     def excluir(self, skin: Skin) -> None:
         skin.exigir_editavel("excluída")

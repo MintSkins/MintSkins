@@ -1,4 +1,5 @@
 """Casos de uso de conta, galeria e favoritos."""
+from datetime import datetime
 from typing import Optional
 
 from ..dominio.conta import Perfil
@@ -7,6 +8,16 @@ from ..dominio.galeria import ID_PERFIL_MINTSKINS, PREFIXO_OFICIAL, ItemGaleria,
 from ..dominio.skin import AUTOR_MINTSKINS, Skin
 from .portas import Estado, Nuvem
 from .servico import ServicoSkins
+
+
+ORDENS = {
+    "populares": lambda i: (not i.oficial, -i.favoritos, -i.downloads, i.nome.lower()),
+    "recentes": lambda i: (-i.publicada_em.timestamp() if i.publicada_em else float("inf"), i.nome.lower()),
+    "favoritadas": lambda i: (-i.favoritos, -i.downloads, i.nome.lower()),
+}
+
+# onde uma skin deste computador esta: so aqui, guardada na conta (privada) ou publicada na galeria
+LOCAL, PRIVADA, PUBLICA = "local", "privada", "publica"
 
 
 class ServicoNuvem:
@@ -45,8 +56,9 @@ class ServicoNuvem:
             self.nuvem.sair(self.token)
         self.estado.definir_sessao(None)
 
-    def atualizar_perfil(self, nome, email, bio):
-        return self.nuvem.atualizar_perfil(self._exigir_login(), nome, email, bio)
+    def atualizar_perfil(self, nome, email, bio, links=None):
+        """links: localizacao, site e github (o e-mail nao muda pelo app)."""
+        return self.nuvem.atualizar_perfil(self._exigir_login(), nome, email, bio, links)
 
     def definir_foto(self, imagem_png):
         return self.nuvem.definir_foto(self._exigir_login(), imagem_png)
@@ -59,7 +71,7 @@ class ServicoNuvem:
             raise LoginNecessario("Entre na sua conta para continuar.")
         return self.token
 
-    def galeria(self, filtro: str = "todas", busca: str = "") -> list[ItemGaleria]:
+    def galeria(self, filtro: str = "todas", busca: str = "", ordem: str = "populares") -> list[ItemGaleria]:
         incluidas = self.skins.incluidas()
         oficiais = [item_oficial(s) for s in incluidas]
         # a conta oficial do site publica as mesmas skins que vem com o app: mostra so a do app
@@ -71,7 +83,7 @@ class ServicoNuvem:
         if filtro == "favoritas":
             itens = [i for i in itens if i.favorito]
         itens = [i for i in itens if i.combina(busca)]
-        return sorted(itens, key=lambda i: (not i.oficial, -i.favoritos, -i.downloads, i.nome.lower()))
+        return sorted(itens, key=ORDENS.get(ordem, ORDENS["populares"]))
 
     def da_conta(self) -> list[ItemGaleria]:
         token = self._exigir_login()
@@ -133,8 +145,22 @@ class ServicoNuvem:
             item = self.nuvem.enviar(token, skin.pasta, meta, publica, anterior)
         except (SkinNaoEncontrada, SemPermissao):
             item = self.nuvem.enviar(token, skin.pasta, meta, publica)
-        self.skins.vincular(skin, nuvem_id=item.id, galeria_id=item.id)
+        self.skins.vincular(skin, nuvem_id=item.id, galeria_id=item.id,
+                            enviada_em=datetime.now().replace(microsecond=0).isoformat())
         return item
+
+    def situacao(self, skin: Skin, na_conta: dict) -> tuple:
+        """(LOCAL | PRIVADA | PUBLICA, item da conta ou None). na_conta = {id: item} de da_conta()."""
+        item = na_conta.get(skin.extras.get("nuvem_id") or "")
+        if not item:
+            return LOCAL, None
+        return (PUBLICA if item.publica else PRIVADA), item
+
+    @staticmethod
+    def pendente(skin: Skin) -> bool:
+        """A skin mudou neste computador depois do ultimo envio para a conta."""
+        mudou, enviada = skin.extras.get("mudou_em"), skin.extras.get("enviada_em")
+        return bool(skin.extras.get("nuvem_id") and mudou and (not enviada or mudou > enviada))
 
     def definir_publica(self, item: ItemGaleria, publica: bool) -> None:
         self.nuvem.definir_publica(self._exigir_login(), item.id, publica)
