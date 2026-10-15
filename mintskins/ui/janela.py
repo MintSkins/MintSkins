@@ -20,7 +20,7 @@ from ..dominio.skin import EXTENSAO, EXTENSOES_ACEITAS  # noqa: E402
 from . import paginas, tema  # noqa: E402
 from .atualizacao import PopupAtualizacao  # noqa: E402
 from .editar_perfil import ModalPerfil  # noqa: E402
-from .modal import ModalAtualizar, ModalConfirmacao, ModalEscolha, ModalFormulario  # noqa: E402
+from .modal import ModalAtualizar, ModalConfirmacao, ModalEscolha, ModalFormulario, ModalSenha  # noqa: E402
 from .notificacoes import Sino  # noqa: E402
 from . import textos as T  # noqa: E402
 from .widgets import Card, Marca, avatar, botao, css, data_br, rotulo  # noqa: E402
@@ -83,9 +83,11 @@ class Janela(Gtk.ApplicationWindow):
         self.formulario = ModalFormulario(corpo, ao_fechar=lambda: self._barra_ativa(True))
         self.escolha = ModalEscolha(corpo, ao_fechar=lambda: self._barra_ativa(True))
         self.modal_atualizar = ModalAtualizar(corpo, ao_fechar=lambda: self._barra_ativa(True))
+        self.modal_senha = ModalSenha(corpo, ao_fechar=lambda: self._barra_ativa(True))
         self.modal_perfil = ModalPerfil(corpo, self._salvar_perfil, ao_fechar=lambda: self._barra_ativa(True),
                                         ao_conta_no_site=self.conta_no_site)
-        self._modais = [self.confirmacao, self.formulario, self.escolha, self.modal_atualizar, self.modal_perfil,
+        self._modais = [self.confirmacao, self.formulario, self.escolha, self.modal_atualizar, self.modal_senha,
+                        self.modal_perfil,
                         self.popup]
         for m in self._modais:
             raiz.add_overlay(m)
@@ -473,14 +475,13 @@ class Janela(Gtk.ApplicationWindow):
         selos = [("Em uso", True)] if ativa else []
         onde, _item = self.situacao(skin)
         etiquetas = {PUBLICA: [("Pública", True)], PRIVADA: [("Privada", False)]}.get(onde, [])
-        if self.app.nuvem.pendente(skin):
+        if onde != LOCAL and self.app.nuvem.pendente(skin):
             selos.append(("Mudanças não enviadas", False))
         quando = "Atualizada" if skin.foi_atualizada else "Salva"
         menu = [("Editar nome e descrição…", lambda: self.renomear(skin))]
         if ativa:
             menu.append((f"Atualizar (salvar v{skin.versao + 1})…", lambda: self.atualizar(skin)))
         menu += [("Trocar capa…", lambda: self.trocar_capa(skin)),
-                 ("Publicar ou guardar na conta…", lambda: self.enviar(skin)),
                  None,
                  ("Duplicar…", lambda: self.duplicar(skin)),
                  ("Exportar…", lambda: self.exportar(skin)),
@@ -493,7 +494,8 @@ class Janela(Gtk.ApplicationWindow):
                     f"v{skin.versao} · {quando.lower()} {data_br(skin.atualizado_em or skin.criado_em, hora=False)}",
                     selos, principal,
                     menu=menu, destaque=ativa, dica=skin.descricao, etiquetas=etiquetas,
-                    ao_abrir=lambda: self.abrir_skin(skin, lista))
+                    ao_abrir=lambda: self.abrir_skin(skin, lista),
+                    na_conta=(lambda: self.gerenciar_na_conta(skin=skin)) if skin.editavel else None)
 
     def acao_item(self, item):
         if not item.instalada:
@@ -502,7 +504,7 @@ class Janela(Gtk.ApplicationWindow):
             return "Aplicada", None, "ms-secundario"
         return "Aplicar", lambda: self.aplicar(self.app.skins.obter(item.skin_local)), "ms-primario"
 
-    def card_item(self, item, dono=False, lista=None):
+    def card_item(self, item, dono=False, lista=None, so_na_conta=False):
         em_uso = bool(self.ativa and item.instalada and self.ativa.id == item.skin_local)
         selos = []
         if item.oficial:
@@ -512,15 +514,14 @@ class Janela(Gtk.ApplicationWindow):
         elif item.instalada and not item.oficial:
             selos.append(("Instalada", False))
         etiquetas = [("Privada", False)] if not item.publica else []
-        menu = None
-        if dono:
-            menu = [("Tornar privada" if item.publica else "Publicar na galeria",
-                     lambda: self.tornar_publica(item, not item.publica)),
-                    None, ("Remover da conta…", lambda: self.remover_da_conta(item), True)]
+        if so_na_conta:     # em Minhas skins: esta na conta, mas nao neste computador
+            selos.append(("Só na conta", False))
+            etiquetas = [("Pública", True)] if item.publica else [("Privada", False)]
+        na_conta = (lambda: self.gerenciar_na_conta(item=item)) if dono else None
         numeros_ = [("folder-download-symbolic", item.downloads)] if not item.oficial else []
         return Card(self.app.capas.capa(item), item.nome, item.autor_nome, "", selos,
                     self.acao_item(item), favorito=(item.favorito, lambda v: self.favoritar(item, v), item.favoritos),
-                    menu=menu, destaque=em_uso, cadeado=item.oficial, dica=item.descricao, etiquetas=etiquetas,
+                    destaque=em_uso, cadeado=item.oficial, dica=item.descricao, etiquetas=etiquetas, na_conta=na_conta,
                     numeros_=numeros_, ao_abrir=lambda: self.abrir_detalhe(item, lista),
                     ao_autor=lambda: self.abrir_perfil(item.autor_id))
 
@@ -622,12 +623,24 @@ class Janela(Gtk.ApplicationWindow):
             return False
         GLib.timeout_add(900, tirar)
 
-    def aplicar(self, skin):
-        if self.app.skins.precisa_backup():
-            self.salvar_atual(primeiro_backup=True, depois=lambda: self.aplicar(skin))
+    def aplicar(self, skin, sem_backup=False):
+        if not sem_backup and self.app.skins.precisa_backup():
+            # o visual da tela nao e nenhuma skin: oferece salvar antes, mas a pessoa decide
+            self._barra_ativa(False)
+            self.escolha.escolher(self._variante, "Salvar o visual atual antes?",
+                                  "O visual que está na tela agora ainda não é uma skin. Se salvar, você pode "
+                                  "voltar a ele quando quiser. Sem salvar, só o Desfazer da última troca volta.", [
+                                      ("salvar", "document-save-symbolic", "Salvar e aplicar",
+                                       "Guarda o visual atual como uma skin sua e depois troca."),
+                                      ("aplicar", "go-next-symbolic", "Aplicar sem salvar",
+                                       f"Troca direto para “{skin.nome}”."),
+                                  ], lambda c: self.salvar_atual(primeiro_backup=True,
+                                                                 depois=lambda: self.aplicar(skin, True))
+                                  if c == "salvar" else self.aplicar(skin, True))
             return
         prefs = self.app.skins.preferencias()
-        self.tarefa(f"Aplicando “{skin.nome}”", lambda prog: self.app.skins.aplicar(skin, prefs, prog),
+        self.tarefa(f"Aplicando “{skin.nome}”",
+                    lambda prog: self.app.skins.aplicar(skin, prefs, prog, sem_backup=sem_backup),
                     ao_terminar=lambda r: self.avisar(
                         f"“{skin.nome}” aplicada." + "".join(f" {a[:1].upper()}{a[1:]}." for a in r.avisos),
                         "Desfazer", self.desfazer, segundos=10))
@@ -651,7 +664,7 @@ class Janela(Gtk.ApplicationWindow):
         ativa = self.ativa
         if not primeiro_backup and ativa and ativa.editavel:
             self._barra_ativa(False)
-            self.escolha.escolher(self._variante, "Salvar o visual da tela", "Você está usando "
+            self.escolha.escolher(self._variante, "Salvar skin", "Você está usando "
                                   f"“{ativa.nome}”. Quer guardar as mudanças nela ou criar outra skin?", [
                                       ("atualizar", "view-refresh-symbolic", f"Atualizar “{ativa.nome}”",
                                        f"Salva por cima e vira a v{ativa.versao + 1}."),
@@ -834,17 +847,63 @@ class Janela(Gtk.ApplicationWindow):
         return False
 
     def enviar(self, skin):
-        """Escolhe onde a skin fica: so na conta (privada) ou publicada na galeria."""
+        self.gerenciar_na_conta(skin=skin)
+
+    def limites(self):
+        """{PUBLICA: (usadas, maximo), PRIVADA: (...)}; maximo None = sem limite. Usadas vem da conta."""
+        itens = list(self.na_conta.values())
+        usadas = {PUBLICA: sum(1 for i in itens if i.publica), PRIVADA: sum(1 for i in itens if not i.publica)}
+        do_site = (self.conta.limites if self.conta else None) or {}
+        maximo = {PUBLICA: (do_site.get("publicas") or {}).get("maximo", 5),
+                  PRIVADA: (do_site.get("privadas") or {}).get("maximo", 5)}
+        if not do_site:
+            maximo = {PUBLICA: 5, PRIVADA: 5}        # site antigo: o limite padrao dos membros
+        return {k: (usadas[k], maximo[k]) for k in (PUBLICA, PRIVADA)}
+
+    def cheio(self, destino):
+        usadas, maximo = self.limites()[destino]
+        return maximo is not None and usadas >= maximo
+
+    def uso(self, destino):
+        usadas, maximo = self.limites()[destino]
+        return f"{usadas}/{maximo}" if maximo is not None else str(usadas)
+
+    def gerenciar_na_conta(self, skin=None, item=None):
+        """Modal com o que da para fazer na conta: guardar, publicar, despublicar ou remover."""
         if not self._exigir_conta("Entre na sua conta para guardar ou publicar skins."):
             return
+        if skin is not None:
+            onde, item = self.situacao(skin)
+        else:
+            onde = PUBLICA if item.publica else PRIVADA
+        nome = (skin or item).nome
+        pub, priv = self.uso(PUBLICA), self.uso(PRIVADA)
+        cheia = {PUBLICA: "Limite de publicadas atingido.", PRIVADA: "Limite de guardadas atingido."}
+        guardar = (PRIVADA, "changes-prevent-symbolic", "Guardar na conta",
+                   f"Privada, só você vê. Guardadas: {priv}." + (f" {cheia[PRIVADA]}" if self.cheio(PRIVADA) else ""),
+                   self.cheio(PRIVADA))
+        publicar = (PUBLICA, "web-browser-symbolic", "Publicar na galeria",
+                    f"Todo mundo vê e pode baixar. Publicadas: {pub}." +
+                    (f" {cheia[PUBLICA]}" if self.cheio(PUBLICA) else ""), self.cheio(PUBLICA))
+        despublicar = (PRIVADA, "changes-prevent-symbolic", "Deixar privada",
+                       f"Sai da galeria e fica privada na conta. Guardadas: {priv}." +
+                       (f" {cheia[PRIVADA]}" if self.cheio(PRIVADA) else ""), self.cheio(PRIVADA))
+        remover = ("remover", "user-trash-symbolic", "Remover da conta",
+                   "Sai da conta e da galeria. Você escolhe se fica neste computador.")
+        opcoes = {LOCAL: [guardar, publicar], PRIVADA: [publicar, remover], PUBLICA: [despublicar, remover]}[onde]
+        estado = {LOCAL: "Está só neste computador.", PRIVADA: "Está guardada na conta (privada).",
+                  PUBLICA: "Está publicada na galeria."}[onde]
+
+        def escolheu(c):
+            if c == "remover":
+                self.remover_da_conta(item, skin)
+            elif skin is not None:
+                self.mudar_situacao(skin, c)
+            else:
+                self.tornar_publica(item, c == PUBLICA)
         self._barra_ativa(False)
-        self.escolha.escolher(self._variante, f"Onde “{skin.nome}” vai ficar?",
-                              "Você pode mudar isso depois, na página da skin.", [
-                                  (PRIVADA, "changes-prevent-symbolic", "Privada na conta",
-                                   "Só você vê. Baixe em outro computador quando quiser."),
-                                  (PUBLICA, "web-browser-symbolic", "Pública na galeria",
-                                   "Todo mundo vê no app e no site, pode baixar e favoritar."),
-                              ], lambda destino: self.mudar_situacao(skin, destino))
+        self.escolha.escolher(self._variante, f"“{nome}” na sua conta",
+                              f"{estado} Sua conta: {pub} publicadas · {priv} guardadas.", opcoes, escolheu)
 
     def mudar_situacao(self, skin, destino):
         """Leva a skin para LOCAL, PRIVADA ou PUBLICA, fazendo o que precisar (enviar, publicar, remover)."""
@@ -854,11 +913,22 @@ class Janela(Gtk.ApplicationWindow):
         if destino != LOCAL and not self._exigir_conta("Entre na sua conta para guardar ou publicar skins."):
             return
         if destino == LOCAL:
-            self.remover_da_conta(item)
+            self.remover_da_conta(item, skin)
+        elif destino != atual and self.cheio(destino):
+            self.mensagem("Limite da conta", f"Você já tem {self.uso(destino)} skins "
+                          f"{'publicadas' if destino == PUBLICA else 'guardadas'}. Mude ou remova outra antes.")
         elif atual == LOCAL:
             publica = destino == PUBLICA
-            self.tarefa(f"Enviando “{skin.nome}”", lambda _p: self.app.nuvem.enviar(skin, publica),
-                        sucesso="Publicada na galeria." if publica else "Guardada na sua conta, só você vê.")
+
+            def enviar():
+                self.tarefa(f"Enviando “{skin.nome}”", lambda _p: self.app.nuvem.enviar(skin, publica),
+                            sucesso="Publicada na galeria." if publica else "Guardada na sua conta, só você vê.")
+            if publica:
+                self.perguntar(f"Publicar “{skin.nome}”?", "Ela vai para a sua conta e aparece na galeria do app "
+                               "e do site. Qualquer pessoa pode ver, baixar e favoritar.", "Publicar", enviar,
+                               icone_nome="web-browser-symbolic")
+            else:
+                enviar()
         else:
             self.tornar_publica(item, destino == PUBLICA)
 
@@ -873,6 +943,11 @@ class Janela(Gtk.ApplicationWindow):
                     sucesso="Atualização enviada. O site já mostra a versão nova.")
 
     def tornar_publica(self, item, publica):
+        destino = PUBLICA if publica else PRIVADA
+        if self.cheio(destino):
+            self.mensagem("Limite da conta", f"Você já tem {self.uso(destino)} skins "
+                          f"{'publicadas' if publica else 'guardadas'}. Mude ou remova outra antes.")
+            return
         if publica:
             self.perguntar(f"Publicar “{item.nome}”?", "Ela aparece na galeria do app e do site. Qualquer "
                            "pessoa pode ver, baixar e favoritar.", "Publicar",
@@ -880,23 +955,57 @@ class Janela(Gtk.ApplicationWindow):
                                                 "Publicada na galeria."),
                            icone_nome="web-browser-symbolic")
         else:
-            self._rapido("Tornar privada", lambda: self.app.nuvem.definir_publica(item, False),
-                         "Agora só você vê esta skin.")
+            self.perguntar(f"Deixar “{item.nome}” privada?", "Ela sai da galeria do app e do site e continua "
+                           "na sua conta. Só você vê e pode baixar.", "Deixar privada",
+                           lambda: self._rapido("Deixar privada", lambda: self.app.nuvem.definir_publica(item, False),
+                                                "Agora só você vê esta skin."),
+                           icone_nome="changes-prevent-symbolic")
 
-    def remover_da_conta(self, item):
-        def remover():
-            try:
-                pagina = self.app.nuvem.remover(item)
-            except MintSkinsErro as e:
-                self.avisar(str(e))
-                return
-            if pagina:
-                self.abrir_url(pagina)
-                self.avisar("Digite no site o código que enviamos para o seu e-mail.")
-        self.perguntar(f"Tirar “{item.nome}” da conta?",
-                       "Ela sai da sua conta e da galeria. A cópia neste computador continua. "
-                       "Para confirmar, enviamos um código para o seu e-mail e abrimos o site.",
-                       "Tirar da conta", remover, icone_nome="user-trash-symbolic", destrutivo=True)
+    def remover_da_conta(self, item, skin=None):
+        """Tira da conta confirmando com a senha. Pergunta antes se a skin fica neste computador:
+        se nao estiver aqui, baixa antes; "apagar de vez" tira daqui tambem."""
+        local = skin or next((s for s in self.app.skins.do_usuario()
+                              if item.id in (s.extras.get("nuvem_id"), s.extras.get("galeria_id"))), None)
+
+        def com_senha(apagar_daqui):
+            def confirmar(senha):
+                try:
+                    pagina = self.app.nuvem.remover(item, senha)
+                except MintSkinsErro as e:
+                    return str(e)              # senha errada: o modal mostra e deixa tentar de novo
+                if pagina:                     # conta sem senha (so Google/GitHub): o site confirma por codigo
+                    self.abrir_url(pagina)
+                    self.avisar("Digite no site o código que enviamos para o seu e-mail para confirmar.")
+                    return None
+                if apagar_daqui and local and local.editavel:
+                    self.app.skins.excluir(local)
+                GLib.idle_add(lambda: self.recarregar() or False)
+                self.avisar(f"“{item.nome}” saiu da sua conta" +
+                            (" e deste computador." if apagar_daqui and local else "."))
+                return None
+            self._barra_ativa(False)
+            self.modal_senha.pedir(self._variante, f"Remover “{item.nome}” da conta",
+                                   "Ela sai da sua conta e da galeria" +
+                                   (" e é apagada deste computador." if apagar_daqui and local else
+                                    "; a cópia neste computador continua.") + " Para confirmar, digite a sua senha.",
+                                   "Apagar de vez" if apagar_daqui else "Remover da conta", confirmar)
+
+        def escolheu(c):
+            if c == "apagar" or local:
+                com_senha(c == "apagar")
+            else:
+                self.tarefa(f"Baixando “{item.nome}”", lambda _p: self.app.nuvem.baixar(item),
+                            ao_terminar=lambda _s: com_senha(False))
+        manter = ("Manter neste computador", "Sai da conta e da galeria. A cópia daqui continua sua.") if local \
+            else ("Salvar neste computador", "Baixa para cá antes e depois tira da conta.")
+        self._barra_ativa(False)
+        self.escolha.escolher(self._variante, f"Remover “{item.nome}” da conta?",
+                              "Depois de escolher, confirme com a senha da sua conta.", [
+                                  ("manter", "computer-symbolic", *manter),
+                                  ("apagar", "user-trash-symbolic", "Apagar de vez",
+                                   "Sai da conta, da galeria" + (" e deste computador." if local else ".") +
+                                   " Não dá para desfazer."),
+                              ], escolheu)
 
     def copiar_link(self, url):
         Gtk.Clipboard.get(Gdk.SELECTION_CLIPBOARD).set_text(url, -1)

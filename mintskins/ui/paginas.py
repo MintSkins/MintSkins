@@ -309,7 +309,8 @@ class Minhas(Pagina):
         self.contagem = rotulo("", ["ms-rotulo-tecnico"])
         self.grade = grade()
         self.vazio = vazio(*T.VAZIO_MINHAS, (T.SALVAR, j.salvar_atual))
-        for w in (self.contagem, self.grade, self.vazio):
+        self.vazio_filtro = vazio("", "")     # filtro ou busca sem resultado: sem o botao de salvar
+        for w in (self.contagem, self.grade, self.vazio, self.vazio_filtro):
             lista.pack_start(w, False, False, 0)
         self.caixa.pack_start(barra, False, False, 0)
         self.caixa.pack_start(lista, False, False, 0)
@@ -319,11 +320,28 @@ class Minhas(Pagina):
         self.atualizar()
 
     def atualizar(self):
-        skins = self.j.app.skins.do_usuario(self.busca.get_text())
+        j, texto = self.j, self.busca.get_text()
+        filtrando = self.filtro != "todas" or bool(texto.strip())
+        titulo, frase = T.VAZIO_FILTRO_MINHAS.get(self.filtro if not texto.strip() else "busca",
+                                                  T.VAZIO_FILTRO_MINHAS["busca"])
+        self.vazio_filtro.get_children()[0].set_text(titulo.upper())
+        self.vazio_filtro.get_children()[1].set_text(frase)
+        todas = j.app.skins.do_usuario()
+        skins = j.app.skins.do_usuario(texto)
         if self.filtro != "todas":
-            skins = [s for s in skins if self.j.situacao(s)[0] == self.filtro]
-        self.contagem.set_text(contar(len(skins), "skin", "skins").upper())
-        preencher(self.grade, self.vazio, [self.j.card_local(s, skins) for s in skins])
+            skins = [s for s in skins if j.situacao(s)[0] == self.filtro]
+        ligadas = {s.extras.get(k) for s in todas for k in ("nuvem_id", "galeria_id")}
+        fora = [i for i in j.na_conta.values() if i.id not in ligadas and i.combina(texto)
+                and self.filtro in ("todas", "publica" if i.publica else "privada")]
+        resumo = contar(len(skins), "skin neste computador", "skins neste computador")
+        if fora:
+            resumo += " · " + contar(len(fora), "só na conta", "só na conta")
+        self.contagem.set_text(resumo.upper())
+        # uma grade so: primeiro as deste computador, depois as que estao so na conta (com Baixar)
+        cards = [j.card_local(s, skins) for s in skins] + \
+            [j.card_item(i, dono=True, lista=fora, so_na_conta=True) for i in fora]
+        preencher(self.grade, self.vazio_filtro if filtrando else self.vazio, cards)
+        (self.vazio if filtrando else self.vazio_filtro).set_visible(False)
 
 
 class Detalhe(Pagina):
@@ -399,10 +417,8 @@ class Detalhe(Pagina):
                                   ("Gerenciar", lambda: j.abrir_skin(local))), False, False, 0)
         elif item.id in j.na_conta:
             dono = Gtk.Box(spacing=8)
-            dono.pack_start(botao("Tornar privada" if item.publica else "Publicar na galeria", "ms-contorno",
-                                  ao_clicar=lambda: j.tornar_publica(item, not item.publica)), False, False, 0)
-            dono.pack_start(botao("Tirar da conta", "ms-perigo", ao_clicar=lambda: j.remover_da_conta(item)),
-                            False, False, 0)
+            dono.pack_start(botao("Gerenciar na conta", "ms-contorno",
+                                  ao_clicar=lambda: j.gerenciar_na_conta(item=item)), False, False, 0)
             lado.pack_start(dono, False, False, 0)
         topo.pack_start(lado, False, False, 0)
         self.caixa.pack_start(topo, False, False, 0)
@@ -522,9 +538,12 @@ class SkinLocal(Pagina):
                                    ("Entrar", lambda: j.ir_para("conta"))), False, False, 0)
         opcoes = Gtk.Box(spacing=12, homogeneous=True)
         for chave, icone_nome, titulo, texto in T.ONDE:
+            if j.conta and chave != LOCAL:      # limite da conta: x/5 publicadas, x/5 guardadas
+                texto += f" {'Publicadas' if chave == 'publica' else 'Guardadas'}: {j.uso(chave)}."
             b = opcao(icone_nome, titulo, texto, escolhida=chave == onde,
                       ao_clicar=lambda c=chave: j.mudar_situacao(skin, c))
-            b.set_sensitive(bool(j.conta) or chave == LOCAL)
+            b.set_sensitive(chave == onde or chave == LOCAL and bool(j.conta) or
+                            bool(j.conta) and chave != LOCAL and not j.cheio(chave))
             opcoes.pack_start(b, True, True, 0)
         caixa.pack_start(opcoes, False, False, 0)
 

@@ -26,6 +26,8 @@ class Conta:
     seguidores: int = 0
     seguindo: int = 0
     pagina: str = ""                # endereco do perfil no site
+    # {"publicas": {"usadas": n, "maximo": 5}, "privadas": {...}}; maximo None = sem limite
+    limites: dict = field(default_factory=dict)
 
     @property
     def iniciais(self) -> str:

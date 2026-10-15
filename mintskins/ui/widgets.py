@@ -7,7 +7,7 @@ import gi
 gi.require_version("Gtk", "3.0")
 gi.require_version("Gdk", "3.0")
 gi.require_version("GdkPixbuf", "2.0")
-from gi.repository import Gdk, GdkPixbuf, GLib, Gtk  # noqa: E402
+from gi.repository import Gdk, GdkPixbuf, Gio, GLib, Gtk  # noqa: E402
 
 MESES = ["jan", "fev", "mar", "abr", "mai", "jun", "jul", "ago", "set", "out", "nov", "dez"]
 
@@ -239,7 +239,7 @@ class Card(Gtk.EventBox):
 
     def __init__(self, capa, titulo, autor, detalhe="", selos=(), principal=None, favorito=None,
                  menu=None, destaque=False, cadeado=False, ao_abrir=None, ao_autor=None, dica="",
-                 numeros_=(), etiquetas=()):
+                 numeros_=(), etiquetas=(), na_conta=None):
         super().__init__(visible_window=False)
         self.titulo = titulo
         self.set_valign(Gtk.Align.START)
@@ -305,6 +305,14 @@ class Card(Gtk.EventBox):
             mais.set_tooltip_text("Mais opções")
             mais.set_popover(menu_popover(mais, menu))
             acoes.pack_end(mais, False, False, 0)
+        if na_conta:        # publicar, deixar privada, guardar ou remover da conta (abre o modal)
+            from . import tema
+            b = css(Gtk.Button(relief=Gtk.ReliefStyle.NONE), "ms-fantasma")
+            b.add(Gtk.Image.new_from_gicon(Gio.FileIcon.new(Gio.File.new_for_path(str(tema.TROCA))),
+                                           Gtk.IconSize.BUTTON))
+            b.set_tooltip_text("Na conta: publicar, deixar privada, guardar ou remover")
+            b.connect("clicked", lambda _b: na_conta())
+            acoes.pack_end(b, False, False, 0)
         if favorito:
             acoes.pack_end(BotaoFavorito(*favorito), False, False, 0)
         corpo.pack_start(acoes, False, False, 0)

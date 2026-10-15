@@ -246,7 +246,7 @@ class NuvemLocal:
         item.publica = publica
         self._salvar_item(item)
 
-    def remover(self, token, item_id):
+    def remover(self, token, item_id, senha=None):
         self._do_dono(token, item_id)
         shutil.rmtree(self._pasta_item(item_id))
         favs = self._ler("favoritos.json", {})

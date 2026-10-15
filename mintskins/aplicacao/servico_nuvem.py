@@ -125,19 +125,31 @@ class ServicoNuvem:
         self.nuvem.favoritar(self._exigir_login(), item.id, favorito)
 
     def baixar(self, item: ItemGaleria) -> Skin:
-        """Instala a skin da galeria em Minhas skins (ou devolve a ja instalada)."""
+        """Instala a skin da galeria em Minhas skins (ou devolve a ja instalada).
+
+        O nome e a descricao vem do site (o pacote guarda os de quando foi enviado). Se a skin e da
+        propria conta, ela ja fica ligada a conta (publica/privada), sem virar uma copia solta."""
         if item.oficial or item.instalada:
             return self.skins.obter(item.skin_local)
         pasta = self.nuvem.baixar(item.id, self.token)
         skin = self.skins.importar(pasta)
-        skin.autor = item.autor_nome
-        return self.skins.vincular(skin, galeria_id=item.id, nuvem_id=None)
+        conta = self.conta()
+        minha = bool(conta and item.autor_id == conta.id)
+        skin.nome, skin.autor = item.nome, item.autor_nome
+        skin.descricao = item.descricao or skin.descricao
+        for k in ("mudou_em", "enviada_em", "nuvem_id", "galeria_id"):   # vinculos de quem enviou
+            skin.extras.pop(k, None)
+        if item.extras.get("versao"):
+            skin.extras["versao"] = item.extras["versao"]
+        agora = datetime.now().replace(microsecond=0).isoformat()
+        return self.skins.vincular(skin, galeria_id=item.id, nuvem_id=item.id if minha else None,
+                                   enviada_em=agora if minha else None)
 
     def enviar(self, skin: Skin, publica: bool) -> ItemGaleria:
         """Guarda a skin na conta (privada) ou publica na galeria."""
         token = self._exigir_login()
         skin.exigir_editavel("enviada")
-        anterior = skin.extras.get("nuvem_id")
+        anterior = skin.extras.get("nuvem_id") or skin.extras.get("galeria_id")
         meta = {"nome": skin.nome, "descricao": skin.descricao, "dock": skin.dock}
         if self.capas:
             meta["capa"] = str(self.capas.capa(skin))
@@ -151,7 +163,8 @@ class ServicoNuvem:
 
     def situacao(self, skin: Skin, na_conta: dict) -> tuple:
         """(LOCAL | PRIVADA | PUBLICA, item da conta ou None). na_conta = {id: item} de da_conta()."""
-        item = na_conta.get(skin.extras.get("nuvem_id") or "")
+        # nuvem_id: enviada daqui; galeria_id: baixada do site, mas e da propria conta
+        item = na_conta.get(skin.extras.get("nuvem_id") or "") or na_conta.get(skin.extras.get("galeria_id") or "")
         if not item:
             return LOCAL, None
         return (PUBLICA if item.publica else PRIVADA), item
@@ -160,11 +173,13 @@ class ServicoNuvem:
     def pendente(skin: Skin) -> bool:
         """A skin mudou neste computador depois do ultimo envio para a conta."""
         mudou, enviada = skin.extras.get("mudou_em"), skin.extras.get("enviada_em")
-        return bool(skin.extras.get("nuvem_id") and mudou and (not enviada or mudou > enviada))
+        ligada = skin.extras.get("nuvem_id") or skin.extras.get("galeria_id")
+        return bool(ligada and mudou and (not enviada or mudou > enviada))
 
     def definir_publica(self, item: ItemGaleria, publica: bool) -> None:
         self.nuvem.definir_publica(self._exigir_login(), item.id, publica)
 
-    def remover(self, item: ItemGaleria):
-        """Pode devolver a pagina do site para confirmar a exclusao (codigo por e-mail)."""
-        return self.nuvem.remover(self._exigir_login(), item.id)
+    def remover(self, item: ItemGaleria, senha: Optional[str] = None):
+        """Tira a skin da conta confirmando com a senha. Devolve None se saiu, ou a pagina do site
+        para confirmar com o codigo do e-mail (conta sem senha)."""
+        return self.nuvem.remover(self._exigir_login(), item.id, senha)

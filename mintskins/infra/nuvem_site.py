@@ -195,7 +195,7 @@ class NuvemSite:
     def _conta(self, d):
         return Conta(id=d["usuario"], nome=d["nome"], email=d.get("email", ""), criada_em=_data(d.get("criada_em")),
                      bio=d.get("bio") or "", foto=self._imagem(d.get("foto"), "fotos", d["usuario"]),
-                     **self._extras_do_perfil(d))
+                     limites=d.get("limites") or {}, **self._extras_do_perfil(d))
 
     def atualizar_perfil(self, token, nome, email, bio, links=None):
         """O e-mail so muda pelo site (pede um codigo enviado para ele)."""
@@ -291,9 +291,12 @@ class NuvemSite:
         self._pedir("PATCH", f"skins/{self._slug(item_id)}", token, campos={"privada": "0" if publica else "1"})
         self._galeria = (0.0, self._galeria[1])
 
-    def remover(self, token, item_id):
-        """O site manda um codigo por e-mail: devolve a pagina para confirmar a exclusao."""
-        return self._pedir("DELETE", f"skins/{self._slug(item_id)}", token)["confirmar"]
+    def remover(self, token, item_id, senha=None):
+        """Com a senha da conta a skin sai na hora (devolve None). Conta sem senha (so Google/GitHub):
+        o site manda um codigo por e-mail e devolve a pagina para confirmar."""
+        r = self._pedir("DELETE", f"skins/{self._slug(item_id)}", token, campos={"senha": senha or ""}) or {}
+        self._galeria = (0.0, self._galeria[1])
+        return None if r.get("removida") else r.get("confirmar")
 
     def favoritar(self, token, item_id, favorito):
         self._pedir("POST" if favorito else "DELETE", f"skins/{self._slug(item_id)}/favorito", token, campos={})

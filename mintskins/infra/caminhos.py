@@ -28,10 +28,20 @@ PASTAS_ANTIGAS = [(Path(HOME, ".local/share/mintskin"), DADOS), (Path(HOME, ".co
 
 
 def migrar_pastas_antigas():
+    """Move a pasta antiga para o nome novo, uma vez so. Fica um atalho no lugar da antiga: assim, se
+    a pessoa apagar a pasta nova depois, a antiga nao volta (antes ela "ressuscitava" skins apagadas)."""
     for antiga, nova in PASTAS_ANTIGAS:
-        if antiga.is_dir() and not antiga.is_symlink() and not nova.exists():
+        if not antiga.is_dir() or antiga.is_symlink():
+            continue
+        try:
+            if nova.exists():   # as duas existem: a antiga ficou parada; tira do caminho sem apagar nada
+                antiga.rename(antiga.with_name(antiga.name + ".antiga"))
+                continue
             nova.parent.mkdir(parents=True, exist_ok=True)
             antiga.rename(nova)
+            antiga.symlink_to(nova)
+        except OSError:
+            pass
 
 
 MAC_SH_BACKUP = Path(HOME, ".config/ativar_mac_automatico/backup")

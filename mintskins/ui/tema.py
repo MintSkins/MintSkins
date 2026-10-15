@@ -65,4 +65,5 @@ def logo(variante):
 
 SIMBOLO = MARCA / "simbolo.svg"
 SINO = MARCA / "sino-symbolic.svg"
+TROCA = MARCA / "troca-symbolic.svg"
 

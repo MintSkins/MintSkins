@@ -269,7 +269,7 @@ class ModalEscolha(ModalBorrado):
         self.cartao.pack_start(botoes, False, False, 0)
 
     def escolher(self, variante, titulo, texto, opcoes, ao_escolher):
-        """opcoes = [(id, icone, titulo, descricao)]; ao_escolher(id)."""
+        """opcoes = [(id, icone, titulo, descricao[, bloqueada])]; ao_escolher(id)."""
         self.titulo.set_text(titulo)
         self.texto.set_text(texto)
         for f in self.opcoes.get_children():
@@ -279,9 +279,10 @@ class ModalEscolha(ModalBorrado):
             self.fechar()
             GLib.idle_add(lambda: ao_escolher(chave) and False)
 
-        for chave, icone_nome, tit, desc in opcoes:
-            self.opcoes.pack_start(opcao(icone_nome, tit, desc, ao_clicar=lambda c=chave: escolheu(c)),
-                                   True, True, 0)
+        for chave, icone_nome, tit, desc, *resto in opcoes:
+            b = opcao(icone_nome, tit, desc, ao_clicar=lambda c=chave: escolheu(c))
+            b.set_sensitive(not (resto and resto[0]))
+            self.opcoes.pack_start(b, True, True, 0)
         self.abrir(variante)
         self.cartao.show_all()
 
@@ -344,3 +345,59 @@ class ModalAtualizar(ModalBorrado):
         capa, enviar = self.capa, self.enviar.get_visible() and self.enviar.get_active()
         self.fechar()
         GLib.idle_add(lambda: self._ao_confirmar(capa, enviar) and False)
+
+
+class ModalSenha(ModalBorrado):
+    """Confirma uma acao com a senha da conta. ao_confirmar(senha) devolve o texto do erro ou None."""
+
+    def __init__(self, alvo, ao_fechar=None):
+        super().__init__(alvo, ao_fechar, largura=460)
+        topo = Gtk.Box(spacing=16)
+        self.icone = css(Gtk.Box(valign=Gtk.Align.START), "ms-popup-icone", "ms-perigo")
+        self.icone.pack_start(icone("dialog-password-symbolic", Gtk.IconSize.DND), True, True, 0)
+        topo.pack_start(self.icone, False, False, 0)
+        textos = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=6, valign=Gtk.Align.CENTER)
+        self.titulo = rotulo("", ["ms-popup-titulo"], wrap=True)
+        self.texto = rotulo("", ["ms-dim"], wrap=True)
+        textos.pack_start(self.titulo, False, False, 0)
+        textos.pack_start(self.texto, False, False, 0)
+        topo.pack_start(textos, True, True, 0)
+        self.cartao.pack_start(topo, False, False, 0)
+        caixa = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=6)
+        caixa.pack_start(rotulo("SENHA DA CONTA", ["ms-rotulo-campo"], cortar=False), False, False, 0)
+        self.senha = css(Gtk.Entry(visibility=False, input_purpose=Gtk.InputPurpose.PASSWORD), "ms-campo")
+        self.senha.connect("activate", lambda _e: self._confirmar())
+        caixa.pack_start(self.senha, False, False, 0)
+        self.erro = rotulo("", ["ms-erro", "ms-pequeno"], wrap=True)
+        self.erro.set_no_show_all(True)
+        caixa.pack_start(self.erro, False, False, 0)
+        self.cartao.pack_start(caixa, False, False, 0)
+        botoes = Gtk.Box(spacing=8)
+        self.ok = botao("", "ms-perigo", ao_clicar=self._confirmar)
+        botoes.pack_end(self.ok, False, False, 0)
+        botoes.pack_end(botao("Cancelar", "ms-contorno", ao_clicar=self.fechar), False, False, 0)
+        self.cartao.pack_start(botoes, False, False, 0)
+
+    def pedir(self, variante, titulo, texto, botao_txt, ao_confirmar):
+        self._ao_confirmar = ao_confirmar
+        self.titulo.set_text(titulo)
+        self.texto.set_text(texto)
+        self.ok.set_label(botao_txt.upper())
+        self.senha.set_text("")
+        self.erro.hide()
+        self.abrir(variante)
+        self.cartao.show_all()
+        self.senha.grab_focus()
+
+    def _confirmar(self):
+        if not self.senha.get_text():
+            self.erro.set_text("Digite a sua senha.")
+            self.erro.show()
+            return
+        erro = self._ao_confirmar(self.senha.get_text())
+        if erro:
+            self.erro.set_text(erro)
+            self.erro.show()
+            self.senha.grab_focus()
+        else:
+            self.fechar()

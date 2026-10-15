@@ -99,9 +99,10 @@ class ServicoSkins:
         self.estado.gravar_preferencias(prefs)
 
     def aplicar(self, skin: Skin, prefs: Optional[Preferencias] = None,
-                progresso: Progresso = _nada) -> Resultado:
+                progresso: Progresso = _nada, sem_backup: bool = False) -> Resultado:
+        """sem_backup: a pessoa escolheu trocar sem salvar o visual atual (o Desfazer ainda volta)."""
         self.desktop.verificar()
-        if self.precisa_backup():
+        if self.precisa_backup() and not sem_backup:
             raise BackupNecessario(
                 "Antes da primeira troca, salve o visual atual como uma skin. "
                 "Assim você sempre consegue voltar para ele.")

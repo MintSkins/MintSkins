@@ -53,6 +53,12 @@ AVISO_BACKUP_TEXTO = "Assim você sempre consegue voltar para ele."
 OFICIAL_SOMENTE_LEITURA = "Skin oficial · não pode ser editada"
 
 VAZIO_MINHAS = ("Nenhuma skin salva ainda", "Salve o visual atual ou baixe uma da galeria.")
+VAZIO_FILTRO_MINHAS = {
+    "publica": ("Nenhuma skin pública", "Abra uma skin e escolha Pública na galeria para todo mundo ver."),
+    "privada": ("Nenhuma skin privada", "Abra uma skin e escolha Privada na conta para guardar só para você."),
+    "local": ("Nenhuma skin só aqui", "Todas as suas skins estão na sua conta."),
+    "busca": ("Nada encontrado", "Tente outro nome."),
+}
 VAZIO_GALERIA = ("Nada por aqui", "Tente outra busca ou outro filtro.")
 VAZIO_FAVORITAS = ("Nenhuma favorita", "Toque no coração de uma skin para guardá-la aqui.")
 VAZIO_NUVEM = ("Nada na sua conta", "Abra uma skin em Minhas skins e escolha onde ela fica.")
@@ -60,7 +66,7 @@ VAZIO_NUVEM = ("Nada na sua conta", "Abra uma skin em Minhas skins e escolha ond
 NUVEM_LOCAL = ("Sua conta é a mesma do mintskins.com: as skins que você envia ficam lá e "
                "aparecem na galeria do site e do app.")
 
-SALVAR = "Salvar visual"
+SALVAR = "Salvar skin"
 DESFAZER = "Desfazer a última troca"
 
 PREF_APLICAR = [

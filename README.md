@@ -88,8 +88,8 @@ instala o resto, inclusive o dock Plank.
 
 | Quero… | Onde |
 |---|---|
-| Guardar o visual atual | **Salvar visual**, no topo |
-| Guardar mudanças na skin em uso (nova versão) | **Salvar visual** → **Atualizar**, ou **Salvar alterações** na página da skin |
+| Guardar o visual atual | **Salvar skin**, no topo |
+| Guardar mudanças na skin em uso (nova versão) | **Salvar skin** → **Atualizar**, ou **Salvar alterações** na página da skin |
 | Trocar de visual | **Aplicar** no card da skin |
 | Voltar ao visual anterior | seta ↶ no topo, ou **Desfazer** no aviso |
 | Baixar skins | **Galeria** → **Baixar** |
