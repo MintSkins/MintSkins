@@ -12,7 +12,8 @@ from ..dominio.erros import MintSkinsErro, SkinInvalida
 from ..dominio.preferencias import Preferencias
 from ..dominio.skin import Skin
 from . import gsettings
-from .caminhos import AUTOSTART, AUTOSTART_SISTEMA, HOME, INSTALADOS, LOGIN_HELPER, PLANK_CFG, SPICES
+from .caminhos import (AUTOSTART, AUTOSTART_SISTEMA, HOME, INSTALADOS, LOGIN_HELPER, PASTA_FONTES, PLANK_CFG,
+                       SPICES, atualizar_cache_de_fontes)
 from .perfil import (CHAVES_FONTE, PLANK, TEMAS_ICONE_SISTEMA, aplicar_perfil, caminho_de_uri,
                      capturar_perfil, generalizar, ler_perfil, perfil_da_skin, resetar_ausentes,
                      sem_aspas, substituidor, valor_no_perfil)
@@ -126,7 +127,7 @@ def _copiar_fontes(perfil, destino, log):
         r = subprocess.run(["fc-list", fam, "--format=%{file}\n"], capture_output=True, text=True)
         n = 0
         for f in r.stdout.splitlines():
-            if f.startswith(HOME + "/") and os.path.isfile(f):
+            if f.startswith(HOME + "/") and os.path.isfile(f) and not f.lower().endswith((".woff", ".woff2")):
                 alvo = destino / os.path.basename(f)
                 if not alvo.exists():
                     shutil.copy2(f, alvo)
@@ -278,15 +279,19 @@ def _instalar_recursos(skin, log):
             if not (dst / t.name).exists():
                 copiar(t, dst / t.name)
     if (skin / "fontes").is_dir():
-        dst = Path(HOME, ".local/share/fonts/mintskins")
+        dst = PASTA_FONTES
         dst.mkdir(parents=True, exist_ok=True)
         novas = 0
         for f in (skin / "fontes").iterdir():
-            if not (dst / f.name).exists():
-                shutil.copy2(f, dst / f.name)
+            # woff/woff2 sao fontes de site: o fontconfig indexa, mas apps Chromium/Electron quebram nelas
+            if not f.is_file() or f.suffix.lower() in (".woff", ".woff2"):
+                continue
+            alvo = dst / f.name
+            if not alvo.exists() or alvo.stat().st_size != f.stat().st_size:
+                shutil.copy(f, alvo)   # sem copy2: data nova, senao o fontconfig acha que o cache ainda vale
                 novas += 1
+        atualizar_cache_de_fontes()
         if novas:
-            subprocess.run(["fc-cache", "-f"], capture_output=True)
             log(f"{novas} fontes instaladas")
 
 

@@ -1,4 +1,5 @@
 """Onde o MintSkins le e grava as coisas."""
+import subprocess
 from pathlib import Path
 
 HOME = str(Path.home())
@@ -9,6 +10,7 @@ DESFAZER = DADOS / "desfazer"
 NUVEM_LOCAL = DADOS / "nuvem"
 CONFIG = Path(HOME, ".config/mintskins")
 CACHE = Path(HOME, ".cache/mintskins")
+PASTA_FONTES = Path(HOME, ".local/share/fonts/mintskins")
 
 SPICES = Path(HOME, ".config/cinnamon/spices")
 PLANK_CFG = Path(HOME, ".config/plank")
@@ -24,7 +26,7 @@ LOGIN_HELPER = next((p for p in (Path("/usr/lib/mintskins/mintskins-login-helper
 # pastas de antes da troca do nome MintSkin -> MintSkins
 PASTAS_ANTIGAS = [(Path(HOME, ".local/share/mintskin"), DADOS), (Path(HOME, ".config/mintskin"), CONFIG),
                   (Path(HOME, ".cache/mintskin"), CACHE),
-                  (Path(HOME, ".local/share/fonts/mintskin"), Path(HOME, ".local/share/fonts/mintskins"))]
+                  (Path(HOME, ".local/share/fonts/mintskin"), PASTA_FONTES)]
 
 
 def migrar_pastas_antigas():
@@ -40,8 +42,18 @@ def migrar_pastas_antigas():
             nova.parent.mkdir(parents=True, exist_ok=True)
             antiga.rename(nova)
             antiga.symlink_to(nova)
+            if nova == PASTA_FONTES:
+                atualizar_cache_de_fontes()
         except OSError:
             pass
+
+
+def atualizar_cache_de_fontes():
+    """Refaz o cache do fontconfig da pasta de fontes do MintSkins. O fontconfig so confere a data da
+    pasta: depois de renomear ou trocar arquivos o cache velho continua "valido", e apps Chromium/Electron
+    (FortiClient, por exemplo) leem a fonte errada e abrem com a janela em branco."""
+    if PASTA_FONTES.is_dir():
+        subprocess.run(["fc-cache", "-f", str(PASTA_FONTES)], capture_output=True)
 
 
 MAC_SH_BACKUP = Path(HOME, ".config/ativar_mac_automatico/backup")
