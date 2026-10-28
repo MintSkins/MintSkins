@@ -1,12 +1,16 @@
 """Nuvem pelo site (porta Nuvem): conta, galeria e skins em mintskins.com, pela API v1.
 
-Entrar troca e-mail/@usuario + senha por um token deste computador (guardado pelo Estado).
+Entrar troca e-mail/@usuario + senha por um token deste computador (guardado pelo Estado). Entrar
+pelo navegador (Google, GitHub ou senha no site) segue o OAuth para apps de desktop: o app escuta numa
+porta de 127.0.0.1, o site devolve ali um codigo e o app troca codigo + segredo (PKCE) pelo token.
 Criar conta, trocar e-mail ou senha e confirmar a exclusao de uma skin acontecem no site,
 porque pedem o codigo enviado por e-mail.
 """
+import base64
 import hashlib
 import json
 import os
+import secrets
 import shutil
 import socket
 import tarfile
@@ -17,11 +21,12 @@ import urllib.parse
 import urllib.request
 import uuid
 from datetime import datetime
+from http.server import BaseHTTPRequestHandler, HTTPServer
 from pathlib import Path
 
 from .. import __version__
 from ..dominio.conta import Conta, Perfil
-from ..dominio.erros import (CredenciaisInvalidas, DadosInvalidos, LoginNecessario, SemConexao,
+from ..dominio.erros import (Cancelado, CredenciaisInvalidas, DadosInvalidos, LoginNecessario, SemConexao,
                              SemPermissao, SkinNaoEncontrada)
 from ..dominio.galeria import PREFIXO_OFICIAL, ItemGaleria
 
@@ -30,6 +35,11 @@ TEMPO = 15
 TEMPO_ENVIO = 600
 PAGINAS_DA_GALERIA = 5
 CACHE_DA_GALERIA = 60  # segundos
+TEMPO_NAVEGADOR = 600  # quanto o app espera a pessoa entrar no site
+
+PAGINA_PRONTO = """<!doctype html><meta charset="utf-8"><title>MintSkins</title>
+<body style="font-family:sans-serif;text-align:center;padding:4em">
+<h1>Pronto!</h1><p>Você já pode fechar esta aba e voltar ao app MintSkins.</p></body>"""
 
 
 def _data(texto):
@@ -148,6 +158,53 @@ class NuvemSite:
         except LoginNecessario as e:
             raise CredenciaisInvalidas(str(e)) from None
         except SemPermissao as e:  # conta sem confirmar, excluida ou suspensa: o site explica
+            raise CredenciaisInvalidas(str(e)) from None
+        self._guardar_conta(r["conta"])
+        return r["token"], self._conta(r["conta"])
+
+    def entrar_pelo_navegador(self, abrir, provedor="", cancelado=lambda: False, tempo=TEMPO_NAVEGADOR):
+        """Abre o site para entrar (provedor: "google_oauth2", "github" ou "" para escolher la) e espera
+        o codigo voltar para a porta local. abrir(url) abre o navegador; cancelado() interrompe a espera."""
+        segredo = secrets.token_urlsafe(48)
+        desafio = base64.urlsafe_b64encode(hashlib.sha256(segredo.encode()).digest()).rstrip(b"=").decode()
+        estado = secrets.token_urlsafe(24)
+        recebido = {}
+
+        class Retorno(BaseHTTPRequestHandler):
+            def do_GET(self):
+                url = urllib.parse.urlsplit(self.path)
+                q = urllib.parse.parse_qs(url.query)
+                # so aceita a volta deste pedido (o estado e de uso unico e so o site o recebeu)
+                if url.path != "/retorno" or q.get("estado", [""])[0] != estado or not q.get("codigo"):
+                    self.send_error(404)
+                    return
+                recebido["codigo"] = q["codigo"][0]
+                corpo = PAGINA_PRONTO.encode()
+                self.send_response(200)
+                self.send_header("Content-Type", "text/html; charset=utf-8")
+                self.send_header("Content-Length", str(len(corpo)))
+                self.end_headers()
+                self.wfile.write(corpo)
+
+            def log_message(self, *_args):
+                pass
+
+        with HTTPServer(("127.0.0.1", 0), Retorno) as servidor:
+            servidor.timeout = 0.5
+            pedido = {"porta": servidor.server_address[1], "estado": estado, "desafio": desafio,
+                      "computador": self.computador, "provedor": provedor}
+            abrir(f"{self.site}/app/conectar?{urllib.parse.urlencode({k: v for k, v in pedido.items() if v})}")
+            limite = time.monotonic() + tempo
+            while "codigo" not in recebido:
+                if cancelado():
+                    raise Cancelado("Login pelo navegador cancelado.")
+                if time.monotonic() > limite:
+                    raise CredenciaisInvalidas("O tempo para entrar pelo navegador acabou. Tente de novo.")
+                servidor.handle_request()
+        try:
+            r = self._pedir("POST", "sessao/codigo",
+                            campos={"codigo": recebido["codigo"], "segredo": segredo, "computador": self.computador})
+        except (LoginNecessario, SemPermissao) as e:
             raise CredenciaisInvalidas(str(e)) from None
         self._guardar_conta(r["conta"])
         return r["token"], self._conta(r["conta"])

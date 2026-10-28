@@ -66,4 +66,6 @@ def logo(variante):
 SIMBOLO = MARCA / "simbolo.svg"
 SINO = MARCA / "sino-symbolic.svg"
 TROCA = MARCA / "troca-symbolic.svg"
+GOOGLE = MARCA / "google.svg"
+GITHUB = MARCA / "github-symbolic.svg"
 

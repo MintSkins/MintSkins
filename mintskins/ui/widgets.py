@@ -1,5 +1,6 @@
 """Widgets reutilizaveis da janela."""
 import math
+from pathlib import Path
 
 import cairo
 import gi
@@ -36,6 +37,12 @@ def rotulo(texto="", classes=(), xalign=0.0, wrap=False, cortar=True):
     return css(l, *classes)
 
 
+def caixa_alta(texto):
+    """Selo em caixa alta. Com letter-spacing, o GTK mede um espaco comum como quebra de linha
+    e o rotulo fica com o dobro da altura; o espaco inseparavel evita isso."""
+    return texto.upper().replace(" ", "\u00a0")
+
+
 def icone(nome, tamanho=Gtk.IconSize.MENU, *classes):
     return css(Gtk.Image.new_from_icon_name(nome, tamanho), *classes)
 
@@ -44,13 +51,14 @@ CAIXA_ALTA = {"ms-primario", "ms-secundario", "ms-contorno", "ms-perigo"}
 
 
 def botao(texto, *classes, icone_nome=None, dica=None, ao_clicar=None, icone_depois=False):
-    """Botao do app. Os principais ficam em caixa alta, como no site."""
+    """Botao do app. Os principais ficam em caixa alta, como no site. icone_nome: nome do tema ou arquivo (Path)."""
     b = Gtk.Button()
     if texto and CAIXA_ALTA & set(classes):
         texto = texto.upper()
     if icone_nome:
         caixa = Gtk.Box(spacing=8, halign=Gtk.Align.CENTER)
-        img = Gtk.Image.new_from_icon_name(icone_nome, Gtk.IconSize.BUTTON)
+        img = (Gtk.Image.new_from_gicon(Gio.FileIcon.new(Gio.File.new_for_path(str(icone_nome))), Gtk.IconSize.BUTTON)
+               if isinstance(icone_nome, Path) else Gtk.Image.new_from_icon_name(icone_nome, Gtk.IconSize.BUTTON))
         partes = [img]
         if texto:
             partes = [Gtk.Label(label=texto), img] if icone_depois else [img, Gtk.Label(label=texto)]
@@ -254,7 +262,7 @@ class Card(Gtk.EventBox):
         sobre.add(img)
         linha = Gtk.Box(spacing=6, halign=Gtk.Align.START, valign=Gtk.Align.START, margin=10)
         for texto, forte in selos:
-            linha.pack_start(css(Gtk.Label(label=texto.upper()), "ms-badge", *(["ms-destaque"] if forte else [])),
+            linha.pack_start(css(Gtk.Label(label=caixa_alta(texto)), "ms-badge", *(["ms-destaque"] if forte else [])),
                              False, False, 0)
         sobre.add_overlay(linha)
         if cadeado:
@@ -278,7 +286,7 @@ class Card(Gtk.EventBox):
         nome.set_tooltip_text(dica or titulo)
         topo.pack_start(nome, True, True, 0)
         for texto, publica in etiquetas:
-            topo.pack_end(css(Gtk.Label(label=texto.upper(), valign=Gtk.Align.CENTER), "ms-etiqueta",
+            topo.pack_end(css(Gtk.Label(label=caixa_alta(texto), valign=Gtk.Align.CENTER), "ms-etiqueta",
                               *(["ms-publica"] if publica else [])), False, False, 0)
         corpo.pack_start(topo, False, False, 0)
 

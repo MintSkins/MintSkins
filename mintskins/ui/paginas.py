@@ -9,7 +9,7 @@ from gi.repository import Gtk
 from .. import __version__
 from ..aplicacao.servico_nuvem import LOCAL
 from ..dominio.erros import MintSkinsErro
-from . import textos as T
+from . import tema, textos as T
 from .vitrine import Vitrine
 from .widgets import (Avatar, avatar, Capa, botao, css, data_br, display, grade, icone,
                       numeros, opcao, preencher, rotulo, rotulo_tecnico, sobrelinha, tamanho_br, trilho, vazio)
@@ -742,11 +742,15 @@ class Conta(Pagina):
     def _entrar(self):
         """Entrar com a conta do mintskins.com. Criar conta e recuperar a senha sao no site (codigo por e-mail)."""
         site = self.j.app.nuvem.site
-        self.caixa.pack_start(cabecalho("Conta", "Entrar", "Use o mesmo e-mail (ou @usuario) e senha do "
-                                        "mintskins.com."), False, False, 0)
+        self.caixa.pack_start(cabecalho("Conta", "Entrar", "Use a mesma conta do mintskins.com: Google, GitHub "
+                                        "ou e-mail (ou @usuario) e senha."), False, False, 0)
         cartao = css(Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=14), "ms-painel")
         cartao.set_halign(Gtk.Align.START)
         cartao.set_size_request(460, -1)
+        for provedor, nome, img in (("google_oauth2", "Google", tema.GOOGLE), ("github", "GitHub", tema.GITHUB)):
+            cartao.pack_start(botao(f"Continuar com {nome}", "ms-contorno", icone_nome=img,
+                                    ao_clicar=lambda p=provedor: self.j.entrar_pelo_navegador(p)), False, False, 0)
+        cartao.pack_start(rotulo("ou com e-mail", ["ms-dim", "ms-pequeno"], xalign=0.5), False, False, 0)
         campos = {}
         for chave, rot, senha in (("email", "E-mail ou usuário", False), ("senha", "Senha", True)):
             caixa = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=6)

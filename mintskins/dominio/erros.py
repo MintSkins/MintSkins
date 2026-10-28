@@ -44,3 +44,7 @@ class SemPermissao(MintSkinsErro):
 
 class SemConexao(MintSkinsErro):
     """O site do MintSkins nao respondeu (sem internet ou fora do ar)."""
+
+
+class Cancelado(MintSkinsErro):
+    """A pessoa desistiu no meio (ex.: do login pelo navegador)."""

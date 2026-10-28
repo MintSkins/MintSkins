@@ -14,7 +14,7 @@ from gi.repository import Gdk, GdkPixbuf, Gio, GLib, Gtk  # noqa: E402
 
 from .. import __version__  # noqa: E402
 from ..aplicacao.servico_nuvem import LOCAL, PRIVADA, PUBLICA  # noqa: E402
-from ..dominio.erros import LoginNecessario, MintSkinsErro  # noqa: E402
+from ..dominio.erros import Cancelado, LoginNecessario, MintSkinsErro  # noqa: E402
 from ..dominio.notificacao import ACAO_ATUALIZACAO  # noqa: E402
 from ..dominio.skin import EXTENSAO, EXTENSOES_ACEITAS  # noqa: E402
 from . import paginas, tema  # noqa: E402
@@ -429,6 +429,10 @@ class Janela(Gtk.ApplicationWindow):
         linha.pack_start(self.spinner, False, False, 0)
         self.txt_titulo = rotulo("", ["ms-card-nome"])
         linha.pack_start(self.txt_titulo, True, True, 0)
+        self._cancelar_tarefa = None
+        self.btn_cancelar = botao("Cancelar", "ms-fantasma", ao_clicar=lambda: self._cancelar_tarefa())
+        self.btn_cancelar.set_no_show_all(True)
+        linha.pack_end(self.btn_cancelar, False, False, 0)
         caixa.pack_start(linha, False, False, 0)
         self.txt_passo = rotulo("", ["ms-dim", "ms-pequeno"])
         caixa.pack_start(self.txt_passo, False, False, 0)
@@ -525,8 +529,9 @@ class Janela(Gtk.ApplicationWindow):
                     numeros_=numeros_, ao_abrir=lambda: self.abrir_detalhe(item, lista),
                     ao_autor=lambda: self.abrir_perfil(item.autor_id))
 
-    def tarefa(self, titulo, funcao, ao_terminar=None, sucesso=None):
-        """Roda funcao(progresso) numa thread, com o painel de progresso."""
+    def tarefa(self, titulo, funcao, ao_terminar=None, sucesso=None, cancelar=None):
+        """Roda funcao(progresso) numa thread, com o painel de progresso. Com cancelar, o painel
+        mostra o botao Cancelar (a funcao para por conta propria e levanta Cancelado)."""
         if self.ocupado:
             return
         self.ocupado = True
@@ -535,6 +540,8 @@ class Janela(Gtk.ApplicationWindow):
         self.txt_titulo.set_text(titulo)
         self.txt_passo.set_text("Começando…")
         self.barra.set_fraction(0)
+        self._cancelar_tarefa = cancelar
+        self.btn_cancelar.set_visible(bool(cancelar))
         self.spinner.start()
         self.painel.set_reveal_child(True)
 
@@ -560,6 +567,8 @@ class Janela(Gtk.ApplicationWindow):
             self.painel.set_reveal_child(False)
             self.pilha.set_sensitive(True)
             self.recarregar()
+            if isinstance(falha, Cancelado):
+                return
             if falha:
                 self._erro(titulo, falha)
                 return
@@ -1020,6 +1029,21 @@ class Janela(Gtk.ApplicationWindow):
             return
         self.recarregar()
         self.avisar(f"Olá, {self.conta.nome.split()[0]}!")
+
+    def entrar_pelo_navegador(self, provedor=""):
+        """Google, GitHub (ou senha no site): a pessoa termina no navegador e volta para o app."""
+        nome = {"google_oauth2": "Google", "github": "GitHub"}.get(provedor, "o navegador")
+        cancelou = threading.Event()
+
+        def rodar(progresso):
+            progresso("Termine de entrar no navegador. Esta janela espera você voltar.")
+            return self.app.nuvem.entrar_pelo_navegador(lambda url: GLib.idle_add(self.abrir_url, url),
+                                                        provedor, cancelou.is_set)
+
+        def entrou(conta):
+            self.present()
+            self.avisar(f"Olá, {conta.nome.split()[0]}!")
+        self.tarefa(f"Entrando com {nome}", rodar, ao_terminar=entrou, cancelar=cancelou.set)
 
     def editar_perfil(self):
         if not self.conta:

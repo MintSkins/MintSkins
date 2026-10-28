@@ -51,6 +51,12 @@ class ServicoNuvem:
         self.estado.definir_sessao(token)
         return conta
 
+    def entrar_pelo_navegador(self, abrir, provedor="", cancelado=lambda: False):
+        """Google, GitHub ou senha pelo site: abre o navegador e espera a pessoa voltar."""
+        token, conta = self.nuvem.entrar_pelo_navegador(abrir, provedor, cancelado)
+        self.estado.definir_sessao(token)
+        return conta
+
     def sair(self):
         if self.token:
             self.nuvem.sair(self.token)
@@ -116,7 +122,8 @@ class ServicoNuvem:
         favs = self.nuvem.favoritos(self.token) if self.token else set()
         locais = {s.extras.get("galeria_id"): s.id for s in self.skins.do_usuario()}
         for i in itens:
-            i.favorito = i.id in favs
+            # a skin incluida no app ("oficial:macos") e favoritada no site pelo slug ("macos")
+            i.favorito = i.id in favs or (i.incluida and i.id.removeprefix(PREFIXO_OFICIAL) in favs)
             if i.incluida:
                 i.favoritos = self.nuvem.contagem_favoritos(i.id)
             else:
