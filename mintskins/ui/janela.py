@@ -6,10 +6,12 @@ import traceback
 import urllib.parse
 from pathlib import Path
 
+import cairo
 import gi
 
 gi.require_version("Gtk", "3.0")
 gi.require_version("Gdk", "3.0")
+gi.require_foreign("cairo")
 from gi.repository import Gdk, GdkPixbuf, Gio, GLib, Gtk  # noqa: E402
 
 from .. import __version__  # noqa: E402
@@ -47,6 +49,7 @@ class Janela(Gtk.ApplicationWindow):
         self._toast_id = 0
         self._toast_acao = None
         self._variante = None
+        self._imagens = None
         self._logos = []
         self._estilo = Gtk.CssProvider()
         Gtk.StyleContext.add_provider_for_screen(Gdk.Screen.get_default(), self._estilo,
@@ -143,12 +146,28 @@ class Janela(Gtk.ApplicationWindow):
         claridade = 0.299 * cor.red + 0.587 * cor.green + 0.114 * cor.blue if ok else 1
         return "escura" if claridade < 0.5 else "clara"
 
+    @staticmethod
+    def _botoes_com_imagem():
+        """O tema desenha fechar/minimizar/maximizar com imagens (ex.: bolinhas do macOS)?"""
+        caminho = Gtk.WidgetPath()
+        caminho.append_type(Gtk.HeaderBar)
+        caminho.iter_set_object_name(-1, "headerbar")
+        caminho.append_type(Gtk.Button)
+        caminho.iter_set_object_name(-1, "button")
+        caminho.iter_add_class(-1, "titlebutton")
+        caminho.iter_add_class(-1, "close")
+        ctx = Gtk.StyleContext()
+        ctx.set_path(caminho)
+        fundo = ctx.get_property("background-image", Gtk.StateFlags.NORMAL)
+        return isinstance(fundo, cairo.SurfacePattern)
+
     def aplicar_tema(self):
         escolha = self.app.skins.preferencias().aparencia
         variante = escolha if escolha in ("clara", "escura") else self._variante_auto()
-        if variante != self._variante:
-            self._variante = variante
-            self._estilo.load_from_data(tema.css(variante).encode())
+        imagens = self._botoes_com_imagem()
+        if (variante, imagens) != (self._variante, self._imagens):
+            self._variante, self._imagens = variante, imagens
+            self._estilo.load_from_data(tema.css(variante, imagens).encode())
             for logo in self._logos:
                 logo.definir(tema.logo(variante))
 

@@ -51,12 +51,17 @@ CORES = {
 }
 
 
-def css(variante):
+def css(variante, botoes_com_imagem=False):
     c = CORES[variante]
     cores = "\n".join(f"@define-color {k} {v};" for k, v in c.items())
     # cor do texto de exemplo dos campos (o tema macOS usa laranja)
     cores += f"\n@define-color placeholder_text_color {c['ms_texto_2']};"
-    return cores + "\n" + Path(__file__).with_name("style.css").read_text(encoding="utf-8")
+    estilo = Path(__file__).with_name("style.css").read_text(encoding="utf-8")
+    # botoes da janela desenhados como icone ganham a cor da paleta; os de imagem
+    # (bolinhas do macOS) escondem o icone de proposito e ficam com o tema
+    if not botoes_com_imagem:
+        estilo += "\n.ms-janela headerbar button.titlebutton {\n  color: @ms_texto_2;\n}\n"
+    return cores + "\n" + estilo
 
 
 def logo(variante):

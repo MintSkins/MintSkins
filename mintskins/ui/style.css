@@ -36,10 +36,6 @@ popover.ms-notificacoes label {
   font-weight: 700;
 }
 
-.ms-janela headerbar button.titlebutton {
-  color: @ms_texto_2;
-}
-
 /* ------------------------------------------------------------ navegacao no topo (como o site) */
 .ms-janela button.ms-nav {
   background-image: none;
