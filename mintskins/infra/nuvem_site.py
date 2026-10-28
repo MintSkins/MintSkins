@@ -1,8 +1,8 @@
 """Nuvem pelo site (porta Nuvem): conta, galeria e skins em mintskins.com, pela API v1.
 
 Entrar troca e-mail/@usuario + senha por um token deste computador (guardado pelo Estado). Entrar
-pelo navegador (Google, GitHub ou senha no site) segue o OAuth para apps de desktop: o app escuta numa
-porta de 127.0.0.1, o site devolve ali um codigo e o app troca codigo + segredo (PKCE) pelo token.
+com Google ou GitHub segue o OAuth para apps de desktop: o login acontece no navegador do sistema, o app
+escuta numa porta de 127.0.0.1, o site devolve ali um codigo e o app troca codigo + segredo (PKCE) pelo token.
 Criar conta, trocar e-mail ou senha e confirmar a exclusao de uma skin acontecem no site,
 porque pedem o codigo enviado por e-mail.
 """
@@ -162,23 +162,49 @@ class NuvemSite:
         self._guardar_conta(r["conta"])
         return r["token"], self._conta(r["conta"])
 
-    def entrar_pelo_navegador(self, abrir, provedor="", cancelado=lambda: False, tempo=TEMPO_NAVEGADOR):
-        """Abre o site para entrar (provedor: "google_oauth2", "github" ou "" para escolher la) e espera
-        o codigo voltar para a porta local. abrir(url) abre o navegador; cancelado() interrompe a espera."""
+    def _pedido_de_login(self, provedor, porta):
+        """Comeco do login pelo site (provedor: "google_oauth2", "github" ou "" para escolher la).
+        Devolve o pedido: url para abrir, porta e estado esperados na volta e o segredo da troca."""
         segredo = secrets.token_urlsafe(48)
         desafio = base64.urlsafe_b64encode(hashlib.sha256(segredo.encode()).digest()).rstrip(b"=").decode()
-        estado = secrets.token_urlsafe(24)
+        pedido = {"porta": porta, "estado": secrets.token_urlsafe(24), "desafio": desafio,
+                  "computador": self.computador, "provedor": provedor}
+        url = f"{self.site}/app/conectar?{urllib.parse.urlencode({k: v for k, v in pedido.items() if v})}"
+        return {"url": url, "porta": porta, "estado": pedido["estado"], "segredo": segredo}
+
+    @staticmethod
+    def _codigo_da_volta(pedido, url):
+        """O codigo, se url e a volta deste pedido (http://127.0.0.1:<porta>/retorno?codigo=..&estado=..)."""
+        partes = urllib.parse.urlsplit(url)
+        q = urllib.parse.parse_qs(partes.query)
+        # so aceita a volta deste pedido (o estado e de uso unico e so o site o recebeu)
+        if (partes.scheme, partes.hostname, partes.port, partes.path) != ("http", "127.0.0.1", pedido["porta"], "/retorno") \
+                or q.get("estado", [""])[0] != pedido["estado"]:
+            return None
+        return q.get("codigo", [None])[0]
+
+    def _trocar_codigo(self, pedido, codigo):
+        try:
+            r = self._pedir("POST", "sessao/codigo",
+                            campos={"codigo": codigo, "segredo": pedido["segredo"], "computador": self.computador})
+        except (LoginNecessario, SemPermissao) as e:
+            raise CredenciaisInvalidas(str(e)) from None
+        self._guardar_conta(r["conta"])
+        return r["token"], self._conta(r["conta"])
+
+    def entrar_pelo_navegador(self, abrir, provedor="", cancelado=lambda: False, tempo=TEMPO_NAVEGADOR):
+        """Login pelo navegador do sistema: abre o site e espera o codigo voltar para a porta local.
+        abrir(url) abre o navegador; cancelado() interrompe a espera."""
         recebido = {}
+        codigo_da_volta = self._codigo_da_volta
 
         class Retorno(BaseHTTPRequestHandler):
             def do_GET(self):
-                url = urllib.parse.urlsplit(self.path)
-                q = urllib.parse.parse_qs(url.query)
-                # so aceita a volta deste pedido (o estado e de uso unico e so o site o recebeu)
-                if url.path != "/retorno" or q.get("estado", [""])[0] != estado or not q.get("codigo"):
+                codigo = codigo_da_volta(pedido, f"http://127.0.0.1:{pedido['porta']}{self.path}")
+                if not codigo:
                     self.send_error(404)
                     return
-                recebido["codigo"] = q["codigo"][0]
+                recebido["codigo"] = codigo
                 corpo = PAGINA_PRONTO.encode()
                 self.send_response(200)
                 self.send_header("Content-Type", "text/html; charset=utf-8")
@@ -191,9 +217,8 @@ class NuvemSite:
 
         with HTTPServer(("127.0.0.1", 0), Retorno) as servidor:
             servidor.timeout = 0.5
-            pedido = {"porta": servidor.server_address[1], "estado": estado, "desafio": desafio,
-                      "computador": self.computador, "provedor": provedor}
-            abrir(f"{self.site}/app/conectar?{urllib.parse.urlencode({k: v for k, v in pedido.items() if v})}")
+            pedido = self._pedido_de_login(provedor, servidor.server_address[1])
+            abrir(pedido["url"])
             limite = time.monotonic() + tempo
             while "codigo" not in recebido:
                 if cancelado():
@@ -201,13 +226,7 @@ class NuvemSite:
                 if time.monotonic() > limite:
                     raise CredenciaisInvalidas("O tempo para entrar pelo navegador acabou. Tente de novo.")
                 servidor.handle_request()
-        try:
-            r = self._pedir("POST", "sessao/codigo",
-                            campos={"codigo": recebido["codigo"], "segredo": segredo, "computador": self.computador})
-        except (LoginNecessario, SemPermissao) as e:
-            raise CredenciaisInvalidas(str(e)) from None
-        self._guardar_conta(r["conta"])
-        return r["token"], self._conta(r["conta"])
+        return self._trocar_codigo(pedido, recebido["codigo"])
 
     def sair(self, token):
         try:

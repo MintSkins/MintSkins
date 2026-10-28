@@ -80,7 +80,7 @@ class NuvemLocal:
         raise CredenciaisInvalidas("E-mail ou senha incorretos.")
 
     def entrar_pelo_navegador(self, abrir, provedor="", cancelado=lambda: False):
-        raise DadosInvalidos("Entrar pelo navegador só funciona com o mintskins.com.")
+        raise DadosInvalidos("Entrar com Google ou GitHub só funciona com o mintskins.com.")
 
     def sair(self, token):
         sessoes = self._ler("sessoes.json", {})
