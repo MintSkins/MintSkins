@@ -18,7 +18,8 @@ class ItemGaleria:
     autor_nome: str
     descricao: str = ""
     publica: bool = True
-    oficial: bool = False
+    oficial: bool = False     # publicada pelo MintSkins (no app ou pela conta @mintskins)
+    incluida: bool = False    # vem dentro do app: ja instalada e somente leitura
     publicada_em: Optional[datetime] = None
     downloads: int = 0
     favoritos: int = 0
@@ -44,6 +45,6 @@ def id_oficial(skin_id: str) -> str:
 
 def item_oficial(skin) -> ItemGaleria:
     return ItemGaleria(id=id_oficial(skin.id), nome=skin.nome, autor_id=ID_PERFIL_MINTSKINS,
-                       autor_nome=AUTOR_MINTSKINS, descricao=skin.descricao, oficial=True,
+                       autor_nome=AUTOR_MINTSKINS, descricao=skin.descricao, oficial=True, incluida=True,
                        publicada_em=skin.criado_em, dock=skin.dock, pasta=skin.pasta,
                        skin_local=skin.id)

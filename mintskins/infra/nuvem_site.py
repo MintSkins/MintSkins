@@ -228,11 +228,11 @@ class NuvemSite:
                 alvo.unlink(missing_ok=True)
                 alvo.symlink_to(capa.name)
         return ItemGaleria(id=d["slug"], nome=d["nome"], autor_id=d["autor"]["usuario"], autor_nome=d["autor"]["nome"],
-                           descricao=d.get("descricao") or "", publica=not d.get("privada"),
+                           descricao=d.get("descricao") or "", publica=not d.get("privada"), oficial=bool(d.get("oficial")),
                            publicada_em=_data(d.get("publicada_em")), downloads=d.get("downloads", 0),
                            favoritos=d.get("favoritos", 0), tamanho=d.get("tamanho", 0),
                            pasta=pasta if capa else None,
-                           extras={"oficial": bool(d.get("oficial")), "pagina": d.get("pagina"),
+                           extras={"pagina": d.get("pagina"),
                                    "download": d.get("download"), "versao": d.get("versao"),
                                    "tags": d.get("tags") or [], "atualizada_em": _data(d.get("atualizada_em"))})
 

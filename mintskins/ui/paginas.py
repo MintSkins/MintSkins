@@ -372,7 +372,7 @@ class Detalhe(Pagina):
                        False, False, 0)
         lado.pack_start(autor, False, False, 0)
 
-        if item.oficial:
+        if item.incluida:
             lado.pack_start(numeros([("Favoritos", item.favoritos), ("Dock", "Sim" if item.dock else "Não")]),
                             False, False, 0)
         else:
@@ -427,9 +427,9 @@ class Detalhe(Pagina):
         sobre = rotulo(item.descricao or "O autor não escreveu uma descrição.", ["ms-sobre-texto"], wrap=True)
         # tema e icones so se sabe das skins que ja estao neste computador
         pares = [("Tema", gtk_tema), ("Ícones", icones)] if gtk_tema else []
-        if item.instalada or item.oficial:
+        if item.instalada or item.incluida:
             pares.append(("Dock", "Sim" if item.dock else "Não"))
-        if not item.oficial:
+        if not item.incluida:
             pares += [("Tamanho", tamanho_br(item.tamanho)), ("Publicada", data_br(item.publicada_em, hora=False))]
         detalhes = ficha(pares)
         como = rotulo("1.  " + ("Clique em Aplicar." if item.instalada else "Clique em Baixar: ela vai para "

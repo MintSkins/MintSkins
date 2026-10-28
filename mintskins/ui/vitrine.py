@@ -61,7 +61,7 @@ class Vitrine(Gtk.Overlay):
         titulo.set_max_width_chars(18)
         caixa.pack_start(titulo, False, False, 0)
         meta = [f"por {item.autor_nome}"]
-        if not item.oficial:
+        if not item.incluida:
             meta.append(f"{item.downloads} download{'' if item.downloads == 1 else 's'}")
         if item.extras.get("versao"):
             meta.append(f"v{item.extras['versao']}")

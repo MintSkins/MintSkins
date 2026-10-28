@@ -511,17 +511,17 @@ class Janela(Gtk.ApplicationWindow):
             selos.append(("Oficial", True))
         if em_uso:
             selos.append(("Em uso", True))
-        elif item.instalada and not item.oficial:
+        elif item.instalada and not item.incluida:
             selos.append(("Instalada", False))
         etiquetas = [("Privada", False)] if not item.publica else []
         if so_na_conta:     # em Minhas skins: esta na conta, mas nao neste computador
             selos.append(("Só na conta", False))
             etiquetas = [("Pública", True)] if item.publica else [("Privada", False)]
         na_conta = (lambda: self.gerenciar_na_conta(item=item)) if dono else None
-        numeros_ = [("folder-download-symbolic", item.downloads)] if not item.oficial else []
+        numeros_ = [("folder-download-symbolic", item.downloads)] if not item.incluida else []
         return Card(self.app.capas.capa(item), item.nome, item.autor_nome, "", selos,
                     self.acao_item(item), favorito=(item.favorito, lambda v: self.favoritar(item, v), item.favoritos),
-                    destaque=em_uso, cadeado=item.oficial, dica=item.descricao, etiquetas=etiquetas, na_conta=na_conta,
+                    destaque=em_uso, cadeado=item.incluida, dica=item.descricao, etiquetas=etiquetas, na_conta=na_conta,
                     numeros_=numeros_, ao_abrir=lambda: self.abrir_detalhe(item, lista),
                     ao_autor=lambda: self.abrir_perfil(item.autor_id))
 

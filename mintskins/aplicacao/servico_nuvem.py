@@ -76,9 +76,11 @@ class ServicoNuvem:
         oficiais = [item_oficial(s) for s in incluidas]
         # a conta oficial do site publica as mesmas skins que vem com o app: mostra so a do app
         ids_incluidas = {s.id for s in incluidas}
-        comunidade = [i for i in self.nuvem.galeria()
-                      if not (i.extras.get("oficial") and i.id in ids_incluidas)]
-        itens = {"oficiais": oficiais, "comunidade": comunidade}.get(filtro, oficiais + comunidade)
+        itens = oficiais + [i for i in self.nuvem.galeria() if not (i.oficial and i.id in ids_incluidas)]
+        if filtro == "oficiais":
+            itens = [i for i in itens if i.oficial]
+        elif filtro == "comunidade":
+            itens = [i for i in itens if not i.oficial]
         itens = self._enriquecer(itens)
         if filtro == "favoritas":
             itens = [i for i in itens if i.favorito]
@@ -115,7 +117,7 @@ class ServicoNuvem:
         locais = {s.extras.get("galeria_id"): s.id for s in self.skins.do_usuario()}
         for i in itens:
             i.favorito = i.id in favs
-            if i.oficial:
+            if i.incluida:
                 i.favoritos = self.nuvem.contagem_favoritos(i.id)
             else:
                 i.skin_local = locais.get(i.id, "")
@@ -129,7 +131,7 @@ class ServicoNuvem:
 
         O nome e a descricao vem do site (o pacote guarda os de quando foi enviado). Se a skin e da
         propria conta, ela ja fica ligada a conta (publica/privada), sem virar uma copia solta."""
-        if item.oficial or item.instalada:
+        if item.incluida or item.instalada:
             return self.skins.obter(item.skin_local)
         pasta = self.nuvem.baixar(item.id, self.token)
         skin = self.skins.importar(pasta)
